@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Search, ExternalLink, Edit, Trash2 } from "lucide-react";
+import { Search, ExternalLink, Edit, Trash2, ArrowLeft } from "lucide-react";
 import { MedicineFormModal } from "@/components/medicine-form-modal";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
@@ -32,9 +32,16 @@ export default function Medicines() {
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight text-foreground" data-testid="text-medicines-title">Medicines Inventory</h1>
-          <p className="text-muted-foreground mt-1">Manage all available pharmaceutical stock.</p>
+        <div className="flex items-center gap-4">
+          <Button variant="outline" size="icon" asChild title="Back to Dashboard">
+            <Link href="/">
+              <ArrowLeft className="h-4 w-4" />
+            </Link>
+          </Button>
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight text-foreground" data-testid="text-medicines-title">Medicines Inventory</h1>
+            <p className="text-muted-foreground mt-1">Manage all available pharmaceutical stock.</p>
+          </div>
         </div>
         <MedicineFormModal />
       </div>

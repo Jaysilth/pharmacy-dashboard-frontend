@@ -5,7 +5,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import { Plus, ArrowLeft } from "lucide-react";
 
 export default function Sales() {
   const { data: sales, isLoading } = useGetSales({ limit: 50 });
@@ -13,9 +13,16 @@ export default function Sales() {
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
       <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">Sales Log</h1>
-          <p className="text-muted-foreground mt-1">Recent transactions and dispense history.</p>
+        <div className="flex items-center gap-4">
+          <Button variant="outline" size="icon" asChild title="Back to Dashboard">
+            <Link href="/">
+              <ArrowLeft className="h-4 w-4" />
+            </Link>
+          </Button>
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight text-foreground">Sales Log</h1>
+            <p className="text-muted-foreground mt-1">Recent transactions and dispense history.</p>
+          </div>
         </div>
         <Button asChild>
           <Link href="/sales/new">

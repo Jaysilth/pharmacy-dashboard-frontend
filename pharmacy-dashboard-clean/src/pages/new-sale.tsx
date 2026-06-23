@@ -2,7 +2,7 @@ import { useForm } from "react-hook-form";
 import type { Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useLocation } from "wouter";
+import { useLocation, Link } from "wouter";
 import { useGetMedicines, useCreateSale } from "@/lib/queries";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { ShoppingCart } from "lucide-react";
+import { ShoppingCart, ArrowLeft } from "lucide-react";
 
 const saleSchema = z.object({
   medicineId: z.coerce.number().min(1, "Please select a medicine"),
@@ -54,9 +54,16 @@ export default function NewSale() {
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight text-foreground">Record New Sale</h1>
-        <p className="text-muted-foreground mt-1">Dispense medicine and update inventory.</p>
+      <div className="flex items-center gap-4">
+        <Button variant="outline" size="icon" asChild title="Back to Dashboard">
+          <Link href="/">
+            <ArrowLeft className="h-4 w-4" />
+          </Link>
+        </Button>
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">Record New Sale</h1>
+          <p className="text-muted-foreground mt-1">Dispense medicine and update inventory.</p>
+        </div>
       </div>
 
       <Card className="shadow-sm border-border">
