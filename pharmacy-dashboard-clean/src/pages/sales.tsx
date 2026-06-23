@@ -12,8 +12,8 @@ export default function Sales() {
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
-      <div className="flex justify-between items-center">
-        <div className="flex items-center gap-4">
+      <div className="flex flex-wrap justify-between items-center gap-3">
+        <div className="flex items-center gap-3">
           <Button variant="outline" size="icon" asChild title="Back to Dashboard">
             <Link href="/">
               <ArrowLeft className="h-4 w-4" />
@@ -32,8 +32,8 @@ export default function Sales() {
       </div>
 
       <Card className="shadow-sm border-border">
-        <CardContent className="p-0">
-          <Table>
+       <CardContent className="p-0 overflow-x-auto">
+          <Table className="min-w-[540px]">
             <TableHeader className="bg-muted/30">
               <TableRow>
                 <TableHead className="pl-6">Date</TableHead>

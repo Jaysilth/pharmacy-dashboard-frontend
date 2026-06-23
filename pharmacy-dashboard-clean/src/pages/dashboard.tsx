@@ -149,7 +149,7 @@ export default function Dashboard() {
         <p className="text-muted-foreground mt-1">Overview of pharmacy operations and inventory.</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
         <StatCard
           title="Total Medicines"
           value={formatSummaryValue(summary?.totalMedicines)}
@@ -192,8 +192,8 @@ export default function Dashboard() {
         </div>
       ) : null}
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <Card className="col-span-1 lg:col-span-2 shadow-sm border-border flex flex-col">
+     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <Card className="col-span-1 lg:col-span-2 shadow-sm border-border flex flex-col min-w-0">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle>Revenue Overview</CardTitle>
             <Select value={timeRange} onValueChange={(v: any) => setTimeRange(v)}>

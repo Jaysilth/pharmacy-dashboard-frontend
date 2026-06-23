@@ -53,8 +53,8 @@ export default function NewSale() {
   }
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6">
-      <div className="flex items-center gap-4">
+    <div className="w-full max-w-2xl mx-auto space-y-5">
+      <div className="flex items-center gap-3">
         <Button variant="outline" size="icon" asChild title="Back to Dashboard">
           <Link href="/">
             <ArrowLeft className="h-4 w-4" />
