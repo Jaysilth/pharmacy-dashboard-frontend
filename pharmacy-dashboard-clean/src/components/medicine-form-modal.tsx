@@ -264,11 +264,19 @@ export function MedicineFormModal({ medicine, trigger }: Props) {
             )} />
 
             <div className="flex justify-end gap-2 pt-4">
-              <Button type="button" variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
-              <Button type="submit" disabled={isPending} data-testid="button-submit-medicine">
-                {medicine ? "Save Changes" : "Add Medicine"}
-              </Button>
-            </div>
+               <Button type="button" variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
+                   <Button
+                        type="submit"
+                           disabled={isPending || (!medicine && !existingMedicines)}
+                           data-testid="button-submit-medicine"
+                   >
+                     {!medicine && !existingMedicines
+                       ? "Loading..."
+                       : medicine
+                       ? "Save Changes"
+                       : "Add Medicine"}
+                         </Button>
+                            </div>
           </form>
         </Form>
       </DialogContent>
