@@ -12,6 +12,8 @@ import type {
   SaleInput,
   LoginRequest,
   JwtResponse,
+  UserProfile,
+  UserInput,
 } from "@/types/api";
 
 // ── Query key factories ──────────────────────────────────────────────────────
@@ -188,5 +190,65 @@ export function useLogin() {
   return useMutation({
     mutationFn: (data: LoginRequest) =>
       apiRequest<JwtResponse>("/api/auth/login", { method: "POST", body: data }),
+  });
+}
+
+// ── User Management hooks (SUPER_ADMIN only) ─────────────────────────────────
+
+const userKeys = {
+  all: () => ["users"] as const,
+  detail: (id: number) => ["users", id] as const,
+};
+
+export function useGetUsers(options?: Omit<UseQueryOptions<UserProfile[]>, "queryKey" | "queryFn">) {
+  return useQuery<UserProfile[]>({
+    queryKey: userKeys.all(),
+    queryFn: () => apiRequest<UserProfile[]>("/api/users"),
+    ...options,
+  });
+}
+
+export function useCreateUser() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: UserInput) =>
+      apiRequest<UserProfile>("/api/users", { method: "POST", body: data }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: userKeys.all() }),
+  });
+}
+
+export function useUpdateUser() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: number; data: Partial<UserInput> }) =>
+      apiRequest<UserProfile>(`/api/users/${id}`, { method: "PUT", body: data }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: userKeys.all() }),
+  });
+}
+
+export function useDeleteUser() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) =>
+      apiRequest<void>(`/api/users/${id}`, { method: "DELETE" }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: userKeys.all() }),
+  });
+}
+
+export function useActivateUser() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) =>
+      apiRequest<UserProfile>(`/api/users/${id}/activate`, { method: "PATCH" }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: userKeys.all() }),
+  });
+}
+
+export function useDeactivateUser() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) =>
+      apiRequest<UserProfile>(`/api/users/${id}/deactivate`, { method: "PATCH" }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: userKeys.all() }),
   });
 }

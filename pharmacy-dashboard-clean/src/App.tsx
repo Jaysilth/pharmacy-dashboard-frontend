@@ -11,32 +11,31 @@ import Medicines from "@/pages/medicines";
 import MedicineDetail from "@/pages/medicine-detail";
 import Sales from "@/pages/sales";
 import NewSale from "@/pages/new-sale";
+import UsersPage from "@/pages/users";
 import NotFound from "@/pages/not-found";
 
 const queryClient = new QueryClient({
   defaultOptions: {
-    queries: {
-      retry: 1,
-      staleTime: 30_000,
-    },
+    queries: { retry: 1, staleTime: 30_000 },
   },
 });
 
 function ProtectedRoutes() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isSuperAdmin } = useAuth();
 
-  if (!isAuthenticated) {
-    return <Redirect to="/login" />;
-  }
+  if (!isAuthenticated) return <Redirect to="/login" />;
 
   return (
     <Layout>
       <Switch>
-        <Route path="/" component={Dashboard} />
-        <Route path="/medicines" component={Medicines} />
-        <Route path="/medicines/:id" component={MedicineDetail} />
-        <Route path="/sales" component={Sales} />
-        <Route path="/sales/new" component={NewSale} />
+        <Route path="/"                component={Dashboard} />
+        <Route path="/medicines"       component={Medicines} />
+        <Route path="/medicines/:id"   component={MedicineDetail} />
+        <Route path="/sales"           component={Sales} />
+        <Route path="/sales/new"       component={NewSale} />
+        <Route path="/users">
+          {isSuperAdmin ? <UsersPage /> : <Redirect to="/" />}
+        </Route>
         <Route component={NotFound} />
       </Switch>
     </Layout>
@@ -45,7 +44,6 @@ function ProtectedRoutes() {
 
 function Router() {
   const { isAuthenticated } = useAuth();
-
   return (
     <Switch>
       <Route path="/login">

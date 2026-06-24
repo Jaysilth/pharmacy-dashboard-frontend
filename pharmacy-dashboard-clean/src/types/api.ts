@@ -1,5 +1,4 @@
-// These mirror the Spring Boot backend's DTOs field-for-field. Keep them in
-// sync with com.pharmacy.pharmacy_management.dto.* if the backend changes shape.
+// These mirror the Spring Boot backend's DTOs field-for-field.
 
 export interface ApiResponse<T> {
   success: boolean;
@@ -13,7 +12,7 @@ export interface Medicine {
   name: string;
   quantity: number;
   price: number;
-  expiryDate: string; // ISO date, e.g. "2026-12-31"
+  expiryDate: string;
   lowStockThreshold: number;
   description?: string | null;
   manufacturer?: string | null;
@@ -23,7 +22,6 @@ export interface Medicine {
   isLowStock: boolean;
 }
 
-// What the "add/edit medicine" form sends. Matches MedicineRequestDTO.
 export interface MedicineInput {
   name: string;
   quantity: number;
@@ -46,10 +44,9 @@ export interface Sale {
   quantity: number;
   unitPrice: number;
   totalPrice: number;
-  createdAt: string; // ISO date-time
+  createdAt: string;
 }
 
-// What "record a sale" sends. Matches SaleRequestDTO.
 export interface SaleInput {
   medicineId: number;
   quantity: number;
@@ -65,6 +62,29 @@ export interface JwtResponse {
   accessToken: string;
 }
 
-// Shape returned by GlobalExceptionHandler for @Valid failures: a map of
-// field name -> error message, delivered as ApiResponse<Record<string,string>>.
 export type ValidationErrors = Record<string, string>;
+
+// ── User Management ──────────────────────────────────────────────────────────
+
+/**
+ * Mirrors UserResponseDTO from the backend.
+ * roles is a Set<String> in Java → string[] in JSON.
+ */
+export interface UserProfile {
+  id: number;
+  username: string;
+  email: string;
+  enabled: boolean;
+  accountNonLocked: boolean;
+  roles: string[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** Mirrors UserRequestDTO — used for both create and update. */
+export interface UserInput {
+  username: string;
+  email: string;
+  password: string;
+  roles: string[];
+}
