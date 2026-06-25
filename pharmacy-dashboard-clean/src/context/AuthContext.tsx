@@ -6,7 +6,7 @@ import {
   useCallback,
   type ReactNode,
 } from "react";
-import { getToken, setToken, clearToken, setUnauthorizedHandler, apiRequest } from "@/lib/api-client";
+import { getToken, setToken, clearToken, setUnauthorizedHandler, apiRequest, ApiError } from "@/lib/api-client";
 import type { UserProfile } from "@/types/api";
 
 interface AuthContextValue {
@@ -25,46 +25,43 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const isSuperAdmin = currentUser?.roles?.includes("ROLE_SUPER_ADMIN") ?? false;
 
-  /** Fetches /api/auth/me and stores the profile. */
-  const loadProfile = useCallback(async () => {
-    try {
-      const profile = await apiRequest<UserProfile>("/api/auth/me");
-      setCurrentUser(profile);
-    } catch {
-      // Token may be expired or invalid — clear everything
-      clearToken();
-      setCurrentUser(null);
-      setIsAuthenticated(false);
-    }
-  }, []);
-
-  /**
-   * Called by the login page after a successful POST /api/auth/login.
-   * Sets the token then immediately fetches the user profile so the
-   * rest of the app knows the role without an extra page load.
-   */
-  const login = useCallback(async (token: string) => {
-    const cleanToken = token.startsWith("Bearer ") ? token.slice(7) : token;
-    setToken(cleanToken);
-    await loadProfile();
-    setIsAuthenticated(true);
-  }, [loadProfile]);
-
   const logout = useCallback(() => {
     clearToken();
     setCurrentUser(null);
     setIsAuthenticated(false);
   }, []);
 
-  // On app mount: if a token already exists in localStorage (page refresh),
-  // reload the profile so role-based UI is correct immediately.
+  const loadProfile = useCallback(async () => {
+    try {
+      const profile = await apiRequest<UserProfile>("/api/auth/me");
+      setCurrentUser(profile);
+    } catch (err) {
+      // Only log out on a genuine 401 (expired/invalid token).
+      // A 404 means the endpoint doesn't exist yet — keep the session alive.
+      // Any other error (500, network) also keeps the session alive.
+      if (err instanceof ApiError && err.status === 401) {
+        logout();
+      } else {
+        setCurrentUser(null);
+      }
+    }
+  }, [logout]);
+
+  const login = useCallback(async (token: string) => {
+    const cleanToken = token.startsWith("Bearer ") ? token.slice(7) : token;
+    setToken(cleanToken);
+    setIsAuthenticated(true);  // Authenticate immediately — never block on profile
+    loadProfile();              // Load profile in background for role-based UI
+  }, [loadProfile]);
+
+  // On page refresh: token exists in localStorage, reload the profile.
   useEffect(() => {
     if (getToken() && !currentUser) {
       loadProfile();
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Wire the 401 handler so any failed request auto-logs out.
+  // Wire the global 401 handler — any API call returning 401 auto-logs out.
   useEffect(() => {
     setUnauthorizedHandler(() => {
       if (getToken()) logout();
