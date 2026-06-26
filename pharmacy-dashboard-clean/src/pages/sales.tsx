@@ -1,84 +1,141 @@
 import { useGetSales } from "@/lib/queries";
 import { Card, CardContent } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Skeleton } from "@/components/ui/skeleton";
-import { format } from "date-fns";
-import { Link } from "wouter";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Plus, ArrowLeft } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Input } from "@/components/ui/input";
+import { Link } from "wouter";
+import { Plus, Search } from "lucide-react";
+import { format } from "date-fns";
+import { useState } from "react";
+import type { Sale } from "@/types/api";
+
+const PAYMENT_COLORS: Record<string, string> = {
+  CASH:      "bg-green-50 text-green-700 border-green-200",
+  CARD:      "bg-blue-50 text-blue-700 border-blue-200",
+  INSURANCE: "bg-purple-50 text-purple-700 border-purple-200",
+  TRANSFER:  "bg-amber-50 text-amber-700 border-amber-200",
+};
+
+function saleTotal(sale: Sale): number {
+  if (sale.grandTotal != null) return sale.grandTotal;
+  if (sale.totalPrice != null) return sale.totalPrice;
+  return 0;
+}
+
+function itemCount(sale: Sale): number {
+  if (sale.items && sale.items.length > 0) return sale.items.length;
+  return sale.quantity != null ? 1 : 0;
+}
 
 export default function Sales() {
-  const { data: sales, isLoading } = useGetSales({ limit: 50 });
+  const { data: sales, isLoading } = useGetSales();
+  const [search, setSearch] = useState("");
+
+  const filtered = sales?.filter(s => {
+    const q = search.toLowerCase();
+    return !q ||
+      s.saleNumber?.toLowerCase().includes(q) ||
+      s.customerName?.toLowerCase().includes(q) ||
+      s.customerPhone?.toLowerCase().includes(q);
+  }) ?? [];
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
-      <div className="flex flex-wrap justify-between items-center gap-3">
-        <div className="flex items-center gap-3">
-          <Button variant="outline" size="icon" asChild title="Back to Dashboard">
-            <Link href="/">
-              <ArrowLeft className="h-4 w-4" />
-            </Link>
-          </Button>
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight text-foreground">Sales Log</h1>
-            <p className="text-muted-foreground mt-1">Recent transactions and dispense history.</p>
-          </div>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">Sales Management</h1>
+          <p className="text-muted-foreground mt-1">Manage point of sale and view sales history.</p>
         </div>
         <Button asChild>
-          <Link href="/sales/new">
-            <Plus className="mr-2 h-4 w-4" /> New Sale
-          </Link>
+          <Link href="/sales/new"><Plus className="mr-2 h-4 w-4" /> New Sale</Link>
         </Button>
       </div>
 
       <Card className="shadow-sm border-border">
-       <CardContent className="p-0 overflow-x-auto">
-          <Table className="min-w-[540px]">
-            <TableHeader className="bg-muted/30">
-              <TableRow>
-                <TableHead className="pl-6">Date</TableHead>
-                <TableHead>Medicine</TableHead>
-                <TableHead className="text-right">Qty</TableHead>
-                <TableHead className="text-right">Unit Price</TableHead>
-                <TableHead className="text-right pr-6">Total</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoading ? (
-                Array.from({ length: 8 }).map((_, i) => (
-                  <TableRow key={i}>
-                    <TableCell className="pl-6"><Skeleton className="h-5 w-32" /></TableCell>
-                    <TableCell><Skeleton className="h-5 w-40" /></TableCell>
-                    <TableCell className="text-right"><Skeleton className="h-5 w-8 ml-auto" /></TableCell>
-                    <TableCell className="text-right"><Skeleton className="h-5 w-16 ml-auto" /></TableCell>
-                    <TableCell className="text-right pr-6"><Skeleton className="h-5 w-16 ml-auto" /></TableCell>
-                  </TableRow>
-                ))
-              ) : sales && sales.length > 0 ? (
-                sales.map((sale) => (
-                  <TableRow key={sale.id} className="hover:bg-muted/10 transition-colors">
-                    <TableCell className="pl-6 text-muted-foreground">
-                      {format(new Date(sale.createdAt), "MMM d, yyyy h:mm a")}
-                    </TableCell>
-                    <TableCell className="font-medium text-foreground">
-                      <Link href={`/medicines/${sale.medicine.id}`} className="hover:underline text-primary">
-                        {sale.medicine.name}
-                      </Link>
-                    </TableCell>
-                    <TableCell className="text-right font-mono">{sale.quantity}</TableCell>
-                    <TableCell className="text-right font-mono text-muted-foreground">₦{sale.unitPrice.toFixed(2)}</TableCell>
-                    <TableCell className="text-right pr-6 font-mono font-semibold text-foreground">₦{sale.totalPrice.toFixed(2)}</TableCell>
-                  </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={5} className="h-32 text-center text-muted-foreground">
-                    No sales recorded yet.
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
+        <div className="px-4 py-3 border-b border-border bg-muted/20">
+          <div className="relative max-w-sm">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input className="pl-9 h-9 bg-background" placeholder="Search by sale #, customer name or phone…"
+              value={search} onChange={e => setSearch(e.target.value)} />
+          </div>
+        </div>
+
+        <CardContent className="p-0">
+          {/* Header row */}
+          <div className="hidden md:grid grid-cols-[1.4fr_1fr_1.2fr_0.6fr_0.7fr_0.8fr] gap-4 px-6 py-3 bg-muted/30 text-xs font-medium text-muted-foreground uppercase tracking-wide border-b border-border">
+            <span>Sale #</span>
+            <span>Date</span>
+            <span>Customer</span>
+            <span>Items</span>
+            <span>Payment</span>
+            <span className="text-right">Total</span>
+          </div>
+
+          {isLoading ? (
+            Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="px-6 py-4 border-b border-border last:border-0">
+                <Skeleton className="h-5 w-full" />
+              </div>
+            ))
+          ) : filtered.length === 0 ? (
+            <div className="py-16 text-center text-muted-foreground">
+              {search ? `No sales matching "${search}".` : "No sales recorded yet."}
+            </div>
+          ) : (
+            filtered.map(sale => (
+              <div key={sale.id}
+                className="grid grid-cols-1 md:grid-cols-[1.4fr_1fr_1.2fr_0.6fr_0.7fr_0.8fr] gap-2 md:gap-4 px-6 py-4 border-b border-border last:border-0 hover:bg-muted/10 transition-colors">
+
+                {/* Sale # */}
+                <div className="flex items-center">
+                  <span className="font-mono text-sm font-semibold text-primary">
+                    {sale.saleNumber ?? `SAL-${sale.id}`}
+                  </span>
+                </div>
+
+                {/* Date */}
+                <div className="text-sm text-muted-foreground">
+                  {format(new Date(sale.createdAt), "dd MMM yyyy, hh:mm a")}
+                </div>
+
+                {/* Customer */}
+                <div>
+                  {sale.customerName ? (
+                    <>
+                      <p className="text-sm font-medium">{sale.customerName}</p>
+                      {sale.customerPhone && (
+                        <p className="text-xs text-muted-foreground">{sale.customerPhone}</p>
+                      )}
+                    </>
+                  ) : (
+                    <span className="text-xs text-muted-foreground italic">No customer info</span>
+                  )}
+                </div>
+
+                {/* Items */}
+                <div className="text-sm text-muted-foreground">
+                  {itemCount(sale)} item{itemCount(sale) !== 1 ? "s" : ""}
+                </div>
+
+                {/* Payment */}
+                <div>
+                  {sale.paymentMethod ? (
+                    <Badge variant="outline" className={PAYMENT_COLORS[sale.paymentMethod] ?? ""}>
+                      {sale.paymentMethod}
+                    </Badge>
+                  ) : (
+                    <span className="text-xs text-muted-foreground">—</span>
+                  )}
+                </div>
+
+                {/* Total */}
+                <div className="text-right font-mono font-semibold text-sm text-foreground">
+                  ₦{saleTotal(sale).toFixed(2)}
+                </div>
+              </div>
+            ))
+          )}
         </CardContent>
       </Card>
     </div>

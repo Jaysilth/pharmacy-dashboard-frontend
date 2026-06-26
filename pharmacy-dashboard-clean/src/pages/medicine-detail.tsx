@@ -12,7 +12,8 @@ export default function MedicineDetail() {
   const id = params?.id ? parseInt(params.id) : 0;
 
   const { data: medicine, isLoading } = useGetMedicine(id);
-  const { data: sales, isLoading: loadingSales } = useGetSales({ medicineId: id, limit: 10 }, { enabled: !!id });
+  const { data: allSales, isLoading: loadingSales } = useGetSales({ enabled: !!id });
+  const sales = allSales?.filter(s => s.medicine?.id === id || s.items?.some(i => i.itemType === 'MEDICINE' && i.itemId === id)).slice(0, 10);
 
   if (isLoading) {
     return (
@@ -73,7 +74,7 @@ export default function MedicineDetail() {
                   <TableRow key={sale.id}>
                     <TableCell className="pl-6">{format(new Date(sale.createdAt), "MMM d, yyyy h:mm a")}</TableCell>
                     <TableCell className="text-right font-mono">{sale.quantity}</TableCell>
-                    <TableCell className="text-right pr-6 font-mono text-primary font-medium">₦{sale.totalPrice.toFixed(2)}</TableCell>
+                    <TableCell className="text-right pr-6 font-mono text-primary font-medium">₦{(sale.grandTotal ?? sale.totalPrice ?? 0).toFixed(2)}</TableCell>
                   </TableRow>
                 ))
               ) : (

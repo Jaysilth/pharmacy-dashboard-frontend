@@ -6,249 +6,142 @@ import {
 } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/api-client";
 import type {
-  Medicine,
-  MedicineInput,
-  Sale,
-  SaleInput,
-  LoginRequest,
-  JwtResponse,
-  UserProfile,
-  UserInput,
+  Medicine, MedicineInput,
+  Glasses, GlassesInput,
+  Surgery, SurgeryInput,
+  Sale, SaleInput,
+  LoginRequest, JwtResponse,
+  UserProfile, UserInput,
 } from "@/types/api";
 
 // ── Query key factories ──────────────────────────────────────────────────────
-
 export const QK = {
-  medicines: (params?: { search?: string }) =>
-    params?.search ? ["medicines", params.search] : ["medicines"],
-  medicine: (id: number) => ["medicines", id],
-  sales: (params?: { medicineId?: number; limit?: number }) =>
-    ["sales", params ?? {}],
-  dashboardSummary: () => ["dashboard", "summary"],
-  salesByDay: () => ["dashboard", "sales-by-day"],
-  lowStockMedicines: () => ["dashboard", "low-stock"],
+  medicines:           (p?: { search?: string }) => p?.search ? ["medicines", p.search] : ["medicines"],
+  medicine:            (id: number) => ["medicines", id],
+  glasses:             (p?: { search?: string }) => p?.search ? ["glasses", p.search] : ["glasses"],
+  glassesItem:         (id: number) => ["glasses", id],
+  surgeries:           (p?: { search?: string }) => p?.search ? ["surgeries", p.search] : ["surgeries"],
+  surgery:             (id: number) => ["surgeries", id],
+  sales:               () => ["sales"],
+  dashboardSummary:    () => ["dashboard", "summary"],
+  salesByDay:          () => ["dashboard", "sales-by-day"],
+  lowStockMedicines:   () => ["dashboard", "low-stock"],
   expiringSoonMedicines: () => ["dashboard", "expiring-soon"],
-  recentSales: () => ["dashboard", "recent-sales"],
+  recentSales:         () => ["dashboard", "recent-sales"],
+  users:               () => ["users"],
 } as const;
 
 // ── Medicine hooks ───────────────────────────────────────────────────────────
-
-export function useGetMedicines(
-  params?: { search?: string },
-  options?: Omit<UseQueryOptions<Medicine[]>, "queryKey" | "queryFn">,
-) {
-  const searchParam = params?.search ? `?search=${encodeURIComponent(params.search)}` : "";
-  return useQuery<Medicine[]>({
-    queryKey: QK.medicines(params),
-    queryFn: () => apiRequest<Medicine[]>(`/api/medicines${searchParam}`),
-    ...options,
-  });
+export function useGetMedicines(params?: { search?: string }, options?: Omit<UseQueryOptions<Medicine[]>, "queryKey" | "queryFn">) {
+  const q = params?.search ? `?search=${encodeURIComponent(params.search)}` : "";
+  return useQuery<Medicine[]>({ queryKey: QK.medicines(params), queryFn: () => apiRequest<Medicine[]>(`/api/medicines${q}`), ...options });
 }
-
-export function useGetMedicine(
-  id: number,
-  options?: Omit<UseQueryOptions<Medicine>, "queryKey" | "queryFn">,
-) {
-  return useQuery<Medicine>({
-    queryKey: QK.medicine(id),
-    queryFn: () => apiRequest<Medicine>(`/api/medicines/${id}`),
-    enabled: !!id,
-    ...options,
-  });
+export function useGetMedicine(id: number, options?: Omit<UseQueryOptions<Medicine>, "queryKey" | "queryFn">) {
+  return useQuery<Medicine>({ queryKey: QK.medicine(id), queryFn: () => apiRequest<Medicine>(`/api/medicines/${id}`), enabled: !!id, ...options });
 }
-
 export function useCreateMedicine() {
   const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (data: MedicineInput) =>
-      apiRequest<Medicine>("/api/medicines", { method: "POST", body: data }),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: QK.medicines() });
-      qc.invalidateQueries({ queryKey: QK.dashboardSummary() });
-      qc.invalidateQueries({ queryKey: QK.lowStockMedicines() });
-      qc.invalidateQueries({ queryKey: QK.expiringSoonMedicines() });
-    },
-  });
+  return useMutation({ mutationFn: (d: MedicineInput) => apiRequest<Medicine>("/api/medicines", { method: "POST", body: d }), onSuccess: () => { qc.invalidateQueries({ queryKey: QK.medicines() }); qc.invalidateQueries({ queryKey: QK.dashboardSummary() }); } });
 }
-
 export function useUpdateMedicine() {
   const qc = useQueryClient();
-  return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: MedicineInput }) =>
-      apiRequest<Medicine>(`/api/medicines/${id}`, { method: "PUT", body: data }),
-    onSuccess: (_data, { id }) => {
-      qc.invalidateQueries({ queryKey: QK.medicines() });
-      qc.invalidateQueries({ queryKey: QK.medicine(id) });
-      qc.invalidateQueries({ queryKey: QK.dashboardSummary() });
-      qc.invalidateQueries({ queryKey: QK.lowStockMedicines() });
-      qc.invalidateQueries({ queryKey: QK.expiringSoonMedicines() });
-    },
-  });
+  return useMutation({ mutationFn: ({ id, data }: { id: number; data: MedicineInput }) => apiRequest<Medicine>(`/api/medicines/${id}`, { method: "PUT", body: data }), onSuccess: (_d, { id }) => { qc.invalidateQueries({ queryKey: QK.medicines() }); qc.invalidateQueries({ queryKey: QK.medicine(id) }); } });
 }
-
 export function useDeleteMedicine() {
   const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (id: number) =>
-      apiRequest<void>(`/api/medicines/${id}`, { method: "DELETE" }),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: QK.medicines() });
-      qc.invalidateQueries({ queryKey: QK.dashboardSummary() });
-      qc.invalidateQueries({ queryKey: QK.lowStockMedicines() });
-      qc.invalidateQueries({ queryKey: QK.expiringSoonMedicines() });
-    },
-  });
+  return useMutation({ mutationFn: (id: number) => apiRequest<void>(`/api/medicines/${id}`, { method: "DELETE" }), onSuccess: () => qc.invalidateQueries({ queryKey: QK.medicines() }) });
+}
+
+// ── Glasses hooks ────────────────────────────────────────────────────────────
+export function useGetGlasses(params?: { search?: string }, options?: Omit<UseQueryOptions<Glasses[]>, "queryKey" | "queryFn">) {
+  const q = params?.search ? `?search=${encodeURIComponent(params.search)}` : "";
+  return useQuery<Glasses[]>({ queryKey: QK.glasses(params), queryFn: () => apiRequest<Glasses[]>(`/api/glasses${q}`), ...options });
+}
+export function useGetGlassesById(id: number) {
+  return useQuery<Glasses>({ queryKey: QK.glassesItem(id), queryFn: () => apiRequest<Glasses>(`/api/glasses/${id}`), enabled: !!id });
+}
+export function useCreateGlasses() {
+  const qc = useQueryClient();
+  return useMutation({ mutationFn: (d: GlassesInput) => apiRequest<Glasses>("/api/glasses", { method: "POST", body: d }), onSuccess: () => qc.invalidateQueries({ queryKey: QK.glasses() }) });
+}
+export function useUpdateGlasses() {
+  const qc = useQueryClient();
+  return useMutation({ mutationFn: ({ id, data }: { id: number; data: GlassesInput }) => apiRequest<Glasses>(`/api/glasses/${id}`, { method: "PUT", body: data }), onSuccess: () => qc.invalidateQueries({ queryKey: QK.glasses() }) });
+}
+export function useDeleteGlasses() {
+  const qc = useQueryClient();
+  return useMutation({ mutationFn: (id: number) => apiRequest<void>(`/api/glasses/${id}`, { method: "DELETE" }), onSuccess: () => qc.invalidateQueries({ queryKey: QK.glasses() }) });
+}
+
+// ── Surgery hooks ────────────────────────────────────────────────────────────
+export function useGetSurgeries(params?: { search?: string }, options?: Omit<UseQueryOptions<Surgery[]>, "queryKey" | "queryFn">) {
+  const q = params?.search ? `?search=${encodeURIComponent(params.search)}` : "";
+  return useQuery<Surgery[]>({ queryKey: QK.surgeries(params), queryFn: () => apiRequest<Surgery[]>(`/api/surgeries${q}`), ...options });
+}
+export function useCreateSurgery() {
+  const qc = useQueryClient();
+  return useMutation({ mutationFn: (d: SurgeryInput) => apiRequest<Surgery>("/api/surgeries", { method: "POST", body: d }), onSuccess: () => qc.invalidateQueries({ queryKey: QK.surgeries() }) });
+}
+export function useUpdateSurgery() {
+  const qc = useQueryClient();
+  return useMutation({ mutationFn: ({ id, data }: { id: number; data: SurgeryInput }) => apiRequest<Surgery>(`/api/surgeries/${id}`, { method: "PUT", body: data }), onSuccess: () => qc.invalidateQueries({ queryKey: QK.surgeries() }) });
+}
+export function useDeleteSurgery() {
+  const qc = useQueryClient();
+  return useMutation({ mutationFn: (id: number) => apiRequest<void>(`/api/surgeries/${id}`, { method: "DELETE" }), onSuccess: () => qc.invalidateQueries({ queryKey: QK.surgeries() }) });
 }
 
 // ── Sale hooks ───────────────────────────────────────────────────────────────
-
-export function useGetSales(
-  params?: { medicineId?: number; limit?: number },
-  options?: Omit<UseQueryOptions<Sale[]>, "queryKey" | "queryFn">,
-) {
-  const qs = new URLSearchParams();
-  if (params?.medicineId != null) qs.set("medicineId", String(params.medicineId));
-  if (params?.limit != null) qs.set("limit", String(params.limit));
-  const query = qs.toString() ? `?${qs}` : "";
-
-  return useQuery<Sale[]>({
-    queryKey: QK.sales(params),
-    queryFn: () => apiRequest<Sale[]>(`/api/sales${query}`),
-    ...options,
-  });
+export function useGetSales(options?: Omit<UseQueryOptions<Sale[]>, "queryKey" | "queryFn">) {
+  return useQuery<Sale[]>({ queryKey: QK.sales(), queryFn: () => apiRequest<Sale[]>("/api/sales"), ...options });
 }
-
 export function useCreateSale() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (data: SaleInput) =>
-      apiRequest<Sale>("/api/sales", { method: "POST", body: data }),
+    mutationFn: (d: SaleInput) => apiRequest<Sale>("/api/sales", { method: "POST", body: d }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: QK.sales() });
       qc.invalidateQueries({ queryKey: QK.medicines() });
+      qc.invalidateQueries({ queryKey: QK.glasses() });
       qc.invalidateQueries({ queryKey: QK.dashboardSummary() });
-      qc.invalidateQueries({ queryKey: QK.salesByDay() });
-      qc.invalidateQueries({ queryKey: QK.lowStockMedicines() });
       qc.invalidateQueries({ queryKey: QK.recentSales() });
     },
   });
 }
 
 // ── Dashboard hooks ──────────────────────────────────────────────────────────
-
-export interface DashboardSummary {
-  totalMedicines: number;
-  totalSalesToday: number;
-  totalRevenueToday: number;
-  lowStockCount: number;
-  expiringSoonCount: number;
-}
-
-export interface SalesByDay {
-  date: string;
-  totalRevenue: number;
-}
-
-export function useGetDashboardSummary() {
-  return useQuery<DashboardSummary>({
-    queryKey: QK.dashboardSummary(),
-    queryFn: () => apiRequest<DashboardSummary>("/api/dashboard/summary"),
-  });
-}
-
-export function useGetSalesByDay() {
-  return useQuery<SalesByDay[]>({
-    queryKey: QK.salesByDay(),
-    queryFn: () => apiRequest<SalesByDay[]>("/api/dashboard/sales-by-day"),
-  });
-}
-
-export function useGetLowStockMedicines() {
-  return useQuery<Medicine[]>({
-    queryKey: QK.lowStockMedicines(),
-    queryFn: () => apiRequest<Medicine[]>("/api/medicines/low-stock"),
-  });
-}
-
-export function useGetExpiringSoonMedicines() {
-  return useQuery<Medicine[]>({
-    queryKey: QK.expiringSoonMedicines(),
-    queryFn: () => apiRequest<Medicine[]>("/api/medicines/expiring-soon"),
-  });
-}
-
-export function useGetRecentSales() {
-  return useQuery<Sale[]>({
-    queryKey: QK.recentSales(),
-    queryFn: () => apiRequest<Sale[]>("/api/sales/recent"),
-  });
-}
+export interface DashboardSummary { totalMedicines: number; totalSalesToday: number; totalRevenueToday: number; lowStockCount: number; expiringSoonCount: number; }
+export interface SalesByDay { date: string; totalRevenue: number; }
+export function useGetDashboardSummary() { return useQuery<DashboardSummary>({ queryKey: QK.dashboardSummary(), queryFn: () => apiRequest<DashboardSummary>("/api/dashboard/summary") }); }
+export function useGetSalesByDay() { return useQuery<SalesByDay[]>({ queryKey: QK.salesByDay(), queryFn: () => apiRequest<SalesByDay[]>("/api/dashboard/sales-by-day") }); }
+export function useGetLowStockMedicines() { return useQuery<Medicine[]>({ queryKey: QK.lowStockMedicines(), queryFn: () => apiRequest<Medicine[]>("/api/medicines/low-stock") }); }
+export function useGetExpiringSoonMedicines() { return useQuery<Medicine[]>({ queryKey: QK.expiringSoonMedicines(), queryFn: () => apiRequest<Medicine[]>("/api/medicines/expiring-soon") }); }
+export function useGetRecentSales() { return useQuery<Sale[]>({ queryKey: QK.recentSales(), queryFn: () => apiRequest<Sale[]>("/api/sales/recent") }); }
 
 // ── Auth ─────────────────────────────────────────────────────────────────────
+export function useLogin() { return useMutation({ mutationFn: (d: LoginRequest) => apiRequest<JwtResponse>("/api/auth/login", { method: "POST", body: d }) }); }
 
-export function useLogin() {
-  return useMutation({
-    mutationFn: (data: LoginRequest) =>
-      apiRequest<JwtResponse>("/api/auth/login", { method: "POST", body: data }),
-  });
-}
-
-// ── User Management hooks (SUPER_ADMIN only) ─────────────────────────────────
-
-const userKeys = {
-  all: () => ["users"] as const,
-  detail: (id: number) => ["users", id] as const,
-};
-
+// ── User Management hooks ────────────────────────────────────────────────────
 export function useGetUsers(options?: Omit<UseQueryOptions<UserProfile[]>, "queryKey" | "queryFn">) {
-  return useQuery<UserProfile[]>({
-    queryKey: userKeys.all(),
-    queryFn: () => apiRequest<UserProfile[]>("/api/users"),
-    ...options,
-  });
+  return useQuery<UserProfile[]>({ queryKey: QK.users(), queryFn: () => apiRequest<UserProfile[]>("/api/users"), ...options });
 }
-
 export function useCreateUser() {
   const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (data: UserInput) =>
-      apiRequest<UserProfile>("/api/users", { method: "POST", body: data }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: userKeys.all() }),
-  });
+  return useMutation({ mutationFn: (d: UserInput) => apiRequest<UserProfile>("/api/users", { method: "POST", body: d }), onSuccess: () => qc.invalidateQueries({ queryKey: QK.users() }) });
 }
-
 export function useUpdateUser() {
   const qc = useQueryClient();
-  return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: Partial<UserInput> }) =>
-      apiRequest<UserProfile>(`/api/users/${id}`, { method: "PUT", body: data }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: userKeys.all() }),
-  });
+  return useMutation({ mutationFn: ({ id, data }: { id: number; data: Partial<UserInput> }) => apiRequest<UserProfile>(`/api/users/${id}`, { method: "PUT", body: data }), onSuccess: () => qc.invalidateQueries({ queryKey: QK.users() }) });
 }
-
 export function useDeleteUser() {
   const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (id: number) =>
-      apiRequest<void>(`/api/users/${id}`, { method: "DELETE" }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: userKeys.all() }),
-  });
+  return useMutation({ mutationFn: (id: number) => apiRequest<void>(`/api/users/${id}`, { method: "DELETE" }), onSuccess: () => qc.invalidateQueries({ queryKey: QK.users() }) });
 }
-
 export function useActivateUser() {
   const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (id: number) =>
-      apiRequest<UserProfile>(`/api/users/${id}/activate`, { method: "PATCH" }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: userKeys.all() }),
-  });
+  return useMutation({ mutationFn: (id: number) => apiRequest<UserProfile>(`/api/users/${id}/activate`, { method: "PATCH" }), onSuccess: () => qc.invalidateQueries({ queryKey: QK.users() }) });
 }
-
 export function useDeactivateUser() {
   const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (id: number) =>
-      apiRequest<UserProfile>(`/api/users/${id}/deactivate`, { method: "PATCH" }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: userKeys.all() }),
-  });
+  return useMutation({ mutationFn: (id: number) => apiRequest<UserProfile>(`/api/users/${id}/deactivate`, { method: "PATCH" }), onSuccess: () => qc.invalidateQueries({ queryKey: QK.users() }) });
 }

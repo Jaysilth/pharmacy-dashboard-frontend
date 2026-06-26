@@ -64,7 +64,7 @@ export default function Dashboard() {
     isLoading: loadingAllSales,
     isError: allSalesHasError,
     error: allSalesError,
-  } = useGetSales({ limit: 10000 });
+  } = useGetSales();
 
   const chartData = useMemo(() => {
     if (!allSales) return [];
@@ -76,7 +76,7 @@ export default function Dashboard() {
       const hours = eachHourOfInterval({ start, end });
       return hours.map(hour => {
         const salesInHour = allSales.filter(sale => isSameHour(new Date(sale.createdAt), hour));
-        const totalRevenue = salesInHour.reduce((sum, sale) => sum + sale.totalPrice, 0);
+        const totalRevenue = salesInHour.reduce((sum, sale) => sum + (sale.grandTotal ?? sale.totalPrice ?? 0), 0);
         return {
           date: format(hour, "ha"),
           totalRevenue
@@ -89,7 +89,7 @@ export default function Dashboard() {
       const days = eachDayOfInterval({ start, end: now });
       return days.map(day => {
         const salesInDay = allSales.filter(sale => isSameDay(new Date(sale.createdAt), day));
-        const totalRevenue = salesInDay.reduce((sum, sale) => sum + sale.totalPrice, 0);
+        const totalRevenue = salesInDay.reduce((sum, sale) => sum + (sale.grandTotal ?? sale.totalPrice ?? 0), 0);
         return {
           date: format(day, "MMM d"),
           totalRevenue
@@ -106,7 +106,7 @@ export default function Dashboard() {
           const d = new Date(sale.createdAt);
           return d >= week && d < weekEnd;
         });
-        const totalRevenue = salesInWeek.reduce((sum, sale) => sum + sale.totalPrice, 0);
+        const totalRevenue = salesInWeek.reduce((sum, sale) => sum + (sale.grandTotal ?? sale.totalPrice ?? 0), 0);
         return {
           date: `Wk of ${format(week, "MMM d")}`,
           totalRevenue
@@ -119,7 +119,7 @@ export default function Dashboard() {
       const months = eachMonthOfInterval({ start, end: now });
       return months.map(month => {
         const salesInMonth = allSales.filter(sale => isSameMonth(new Date(sale.createdAt), month));
-        const totalRevenue = salesInMonth.reduce((sum, sale) => sum + sale.totalPrice, 0);
+        const totalRevenue = salesInMonth.reduce((sum, sale) => sum + (sale.grandTotal ?? sale.totalPrice ?? 0), 0);
         return {
           date: format(month, "MMM yyyy"),
           totalRevenue
@@ -318,12 +318,12 @@ export default function Dashboard() {
               recentSales.map((sale) => (
                 <div key={sale.id} className="flex justify-between items-center border-b border-border pb-3 last:border-0 last:pb-0" data-testid={`recent-sale-${sale.id}`}>
                   <div>
-                    <p className="font-medium text-sm">{sale.medicine.name}</p>
+                    <p className="font-medium text-sm">{sale.items?.[0]?.itemName ?? sale.medicine?.name ?? 'Unknown'}</p>
                     <p className="text-xs text-muted-foreground">{format(new Date(sale.createdAt), "MMM d, yyyy h:mm a")}</p>
                   </div>
                   <div className="text-right">
-                    <p className="font-mono font-medium text-foreground">₦{sale.totalPrice.toFixed(2)}</p>
-                    <p className="text-xs text-muted-foreground">Qty: {sale.quantity}</p>
+                    <p className="font-mono font-medium text-foreground">₦{(sale.grandTotal ?? sale.totalPrice ?? 0).toFixed(2)}</p>
+                    <p className="text-xs text-muted-foreground">{sale.items?.length ?? 1} item{(sale.items?.length ?? 1) !== 1 ? 's' : ''}</p>
                   </div>
                 </div>
               ))

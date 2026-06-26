@@ -1,5 +1,3 @@
-// These mirror the Spring Boot backend's DTOs field-for-field.
-
 export interface ApiResponse<T> {
   success: boolean;
   message?: string;
@@ -32,24 +30,95 @@ export interface MedicineInput {
   manufacturer?: string;
 }
 
-export interface SaleMedicineInfo {
+export interface Glasses {
   id: number;
   name: string;
-  manufacturer?: string | null;
+  brand?: string;
+  frameType?: string;
+  lensType?: string;
+  color?: string;
+  price: number;
+  quantity: number;
+  lowStockThreshold: number;
+  description?: string;
+  lowStock: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface GlassesInput {
+  name: string;
+  brand?: string;
+  frameType?: string;
+  lensType?: string;
+  color?: string;
+  price: number;
+  quantity: number;
+  lowStockThreshold?: number;
+  description?: string;
+}
+
+export interface Surgery {
+  id: number;
+  name: string;
+  category?: string;
+  description?: string;
+  price: number;
+  durationMinutes?: number;
+  active: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface SurgeryInput {
+  name: string;
+  category?: string;
+  description?: string;
+  price: number;
+  durationMinutes?: number;
+  active?: boolean;
+}
+
+export interface SaleItemResponse {
+  itemType: "MEDICINE" | "GLASSES" | "SURGERY";
+  itemId: number;
+  itemName: string;
+  quantity: number;
+  unitPrice: number;
+  subtotal: number;
 }
 
 export interface Sale {
   id: number;
-  medicine: SaleMedicineInfo;
-  quantity: number;
-  unitPrice: number;
-  totalPrice: number;
+  saleNumber: string;
+  customerName?: string;
+  customerPhone?: string;
+  paymentMethod?: string;
+  notes?: string;
+  grandTotal?: number;
+  items: SaleItemResponse[];
   createdAt: string;
+  // legacy
+  medicine?: { id: number; name: string; manufacturer?: string } | null;
+  quantity?: number;
+  unitPrice?: number;
+  totalPrice?: number;
+}
+
+export interface SaleItemInput {
+  itemType: "MEDICINE" | "GLASSES" | "SURGERY";
+  itemId: number;
+  quantity: number;
+  itemName: string;
+  unitPrice: number;
 }
 
 export interface SaleInput {
-  medicineId: number;
-  quantity: number;
+  customerName: string;
+  customerPhone: string;
+  paymentMethod: string;
+  notes?: string;
+  items: { itemType: string; itemId: number; quantity: number }[];
 }
 
 export interface LoginRequest {
@@ -64,12 +133,6 @@ export interface JwtResponse {
 
 export type ValidationErrors = Record<string, string>;
 
-// ── User Management ──────────────────────────────────────────────────────────
-
-/**
- * Mirrors UserResponseDTO from the backend.
- * roles is a Set<String> in Java → string[] in JSON.
- */
 export interface UserProfile {
   id: number;
   username: string;
@@ -81,7 +144,6 @@ export interface UserProfile {
   updatedAt: string;
 }
 
-/** Mirrors UserRequestDTO — used for both create and update. */
 export interface UserInput {
   username: string;
   email: string;

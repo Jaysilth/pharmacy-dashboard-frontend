@@ -9,30 +9,31 @@ import Login from "@/pages/login";
 import Dashboard from "@/pages/dashboard";
 import Medicines from "@/pages/medicines";
 import MedicineDetail from "@/pages/medicine-detail";
+import GlassesPage from "@/pages/glasses";
+import SurgeriesPage from "@/pages/surgeries";
 import Sales from "@/pages/sales";
 import NewSale from "@/pages/new-sale";
 import UsersPage from "@/pages/users";
 import NotFound from "@/pages/not-found";
 
 const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: { retry: 1, staleTime: 30_000 },
-  },
+  defaultOptions: { queries: { retry: 1, staleTime: 30_000 } },
 });
 
 function ProtectedRoutes() {
   const { isAuthenticated, isSuperAdmin } = useAuth();
-
   if (!isAuthenticated) return <Redirect to="/login" />;
 
   return (
     <Layout>
       <Switch>
-        <Route path="/"                component={Dashboard} />
-        <Route path="/medicines"       component={Medicines} />
-        <Route path="/medicines/:id"   component={MedicineDetail} />
-        <Route path="/sales"           component={Sales} />
-        <Route path="/sales/new"       component={NewSale} />
+        <Route path="/"              component={Dashboard} />
+        <Route path="/medicines"     component={Medicines} />
+        <Route path="/medicines/:id" component={MedicineDetail} />
+        <Route path="/glasses"       component={GlassesPage} />
+        <Route path="/surgeries"     component={SurgeriesPage} />
+        <Route path="/sales"         component={Sales} />
+        <Route path="/sales/new"     component={NewSale} />
         <Route path="/users">
           {isSuperAdmin ? <UsersPage /> : <Redirect to="/" />}
         </Route>
@@ -46,12 +47,8 @@ function Router() {
   const { isAuthenticated } = useAuth();
   return (
     <Switch>
-      <Route path="/login">
-        {isAuthenticated ? <Redirect to="/" /> : <Login />}
-      </Route>
-      <Route>
-        <ProtectedRoutes />
-      </Route>
+      <Route path="/login">{isAuthenticated ? <Redirect to="/" /> : <Login />}</Route>
+      <Route><ProtectedRoutes /></Route>
     </Switch>
   );
 }
