@@ -11,6 +11,7 @@ export interface Medicine {
   quantity: number;
   price: number;
   expiryDate: string;
+  category?: string | null;
   lowStockThreshold: number;
   description?: string | null;
   manufacturer?: string | null;
@@ -24,6 +25,7 @@ export interface MedicineInput {
   name: string;
   quantity: number;
   price: number;
+  category?: string;
   expiryDate: string;
   lowStockThreshold?: number;
   description?: string;

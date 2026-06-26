@@ -10,18 +10,27 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, AlertTriangle } from "lucide-react";
 import { format } from "date-fns";
 import type { Medicine } from "@/types/api";
 
+const CATEGORIES = [
+  { value: "EYEDROP",   label: "Eye Drop" },
+  { value: "TABLET",    label: "Tablet" },
+  { value: "INJECTION", label: "Injection" },
+  { value: "SYRUP",     label: "Syrup" },
+] as const;
+
 const medicineSchema = z.object({
-  name: z.string().min(1, "Name is required"),
-  quantity: z.coerce.number().min(0, "Must be 0 or more"),
-  price: z.coerce.number().min(0, "Must be 0 or more"),
-  expiryDate: z.string().min(1, "Expiry date is required"),
+  name:              z.string().min(1, "Name is required"),
+  category:          z.string().min(1, "Category is required"),
+  quantity:          z.coerce.number().min(0, "Must be 0 or more"),
+  price:             z.coerce.number().min(0, "Must be 0 or more"),
+  expiryDate:        z.string().min(1, "Expiry date is required"),
   lowStockThreshold: z.coerce.number().min(0).optional(),
-  description: z.string().optional(),
-  manufacturer: z.string().optional(),
+  description:       z.string().optional(),
+  manufacturer:      z.string().optional(),
 });
 
 type MedicineForm = z.infer<typeof medicineSchema>;
@@ -39,67 +48,42 @@ export function MedicineFormModal({ medicine, trigger }: Props) {
   const createMedicine = useCreateMedicine();
   const updateMedicine = useUpdateMedicine();
 
-  // Pull existing medicines for duplicate check — only runs when modal is open
   const { data: existingMedicines } = useGetMedicines(
     undefined,
     { enabled: open && !medicine }
   );
 
+  const emptyDefaults: MedicineForm = {
+    name: "", category: "", quantity: 0, price: 0,
+    expiryDate: format(new Date(), "yyyy-MM-dd"),
+    lowStockThreshold: 10, description: "", manufacturer: "",
+  };
+
+  const editDefaults = (m: Medicine): MedicineForm => ({
+    name: m.name,
+    category: m.category ?? "",
+    quantity: m.quantity,
+    price: m.price,
+    expiryDate: m.expiryDate.split("T")[0],
+    lowStockThreshold: m.lowStockThreshold,
+    description: m.description ?? "",
+    manufacturer: m.manufacturer ?? "",
+  });
+
   const form = useForm<MedicineForm>({
     resolver: zodResolver(medicineSchema) as Resolver<MedicineForm>,
-    defaultValues: medicine
-      ? {
-          name: medicine.name,
-          quantity: medicine.quantity,
-          price: medicine.price,
-          expiryDate: medicine.expiryDate.split("T")[0],
-          lowStockThreshold: medicine.lowStockThreshold,
-          description: medicine.description ?? "",
-          manufacturer: medicine.manufacturer ?? "",
-        }
-      : {
-          name: "",
-          quantity: 0,
-          price: 0,
-          expiryDate: format(new Date(), "yyyy-MM-dd"),
-          lowStockThreshold: 10,
-          description: "",
-          manufacturer: "",
-        },
+    defaultValues: medicine ? editDefaults(medicine) : emptyDefaults,
   });
 
   const onOpenChange = (next: boolean) => {
     setOpen(next);
     setDuplicateMatch(null);
     setConfirmedDuplicate(false);
-    if (next) {
-      form.reset(
-        medicine
-          ? {
-              name: medicine.name,
-              quantity: medicine.quantity,
-              price: medicine.price,
-              expiryDate: medicine.expiryDate.split("T")[0],
-              lowStockThreshold: medicine.lowStockThreshold,
-              description: medicine.description ?? "",
-              manufacturer: medicine.manufacturer ?? "",
-            }
-          : {
-              name: "",
-              quantity: 0,
-              price: 0,
-              expiryDate: format(new Date(), "yyyy-MM-dd"),
-              lowStockThreshold: 10,
-              description: "",
-              manufacturer: "",
-            },
-      );
-    }
+    if (next) form.reset(medicine ? editDefaults(medicine) : emptyDefaults);
   };
 
   const onSubmit = (values: MedicineForm) => {
     if (medicine) {
-      // Edit mode — no duplicate check needed
       updateMedicine.mutate(
         { id: medicine.id, data: values },
         {
@@ -110,21 +94,17 @@ export function MedicineFormModal({ medicine, trigger }: Props) {
       return;
     }
 
-    // Add mode — check for duplicate name before submitting
     if (!confirmedDuplicate && existingMedicines) {
       const match = existingMedicines.find(
-        (m) => m.name.trim().toLowerCase() === values.name.trim().toLowerCase()
+        m => m.name.trim().toLowerCase() === values.name.trim().toLowerCase()
       );
-      if (match) {
-        setDuplicateMatch(match);
-        return; // Stop here — show the warning instead
-      }
+      if (match) { setDuplicateMatch(match); return; }
     }
 
     createMedicine.mutate(values, {
       onSuccess: () => {
         toast({ title: "Medicine added." });
-        form.reset();
+        form.reset(emptyDefaults);
         setOpen(false);
         setDuplicateMatch(null);
         setConfirmedDuplicate(false);
@@ -149,7 +129,7 @@ export function MedicineFormModal({ medicine, trigger }: Props) {
           <DialogTitle>{medicine ? "Edit Medicine" : "Add New Medicine"}</DialogTitle>
         </DialogHeader>
 
-        {/* ── Duplicate warning banner ── */}
+        {/* Duplicate warning */}
         {duplicateMatch && (
           <div className="rounded-lg border border-amber-300 bg-amber-50 p-4 space-y-3">
             <div className="flex items-start gap-3">
@@ -159,33 +139,27 @@ export function MedicineFormModal({ medicine, trigger }: Props) {
                   "{duplicateMatch.name}" already exists in inventory.
                 </p>
                 <p className="text-amber-700 mt-1">
-                  Current stock: <span className="font-mono font-medium">{duplicateMatch.quantity} units</span> at <span className="font-mono font-medium">₦{Number(duplicateMatch.price).toFixed(2)}</span> each.
+                  Current stock:{" "}
+                  <span className="font-mono font-medium">{duplicateMatch.quantity} units</span>{" "}
+                  at <span className="font-mono font-medium">₦{Number(duplicateMatch.price).toFixed(2)}</span>.
                 </p>
                 <p className="text-amber-700 mt-1">
-                  If this is a new batch with a different price or expiry date, you can create a separate record. Otherwise, use the <strong>Edit</strong> button on the existing entry to update its stock.
+                  Use the <strong>Edit</strong> button on the existing entry to update stock,
+                  or create a separate record for a new batch.
                 </p>
               </div>
             </div>
             <div className="flex gap-2 justify-end">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => { setDuplicateMatch(null); setOpen(false); }}
-              >
+              <Button type="button" variant="outline" size="sm"
+                onClick={() => { setDuplicateMatch(null); setOpen(false); }}>
                 Cancel — I'll edit the existing one
               </Button>
-              <Button
-                type="button"
-                size="sm"
-                variant="destructive"
+              <Button type="button" size="sm" variant="destructive"
                 onClick={() => {
                   setConfirmedDuplicate(true);
                   setDuplicateMatch(null);
-                  // Re-trigger submit with confirmed flag
                   form.handleSubmit(onSubmit)();
-                }}
-              >
+                }}>
                 Create separate record anyway
               </Button>
             </div>
@@ -194,21 +168,38 @@ export function MedicineFormModal({ medicine, trigger }: Props) {
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pt-2">
+
             <FormField control={form.control} name="name" render={({ field }) => (
               <FormItem>
                 <FormLabel>Medicine Name</FormLabel>
                 <FormControl>
-                  <Input
-                    {...field}
-                    data-testid="input-medicine-name"
-                    onChange={(e) => {
+                  <Input {...field} data-testid="input-medicine-name"
+                    onChange={e => {
                       field.onChange(e);
-                      // Reset duplicate state when name changes
                       if (duplicateMatch) setDuplicateMatch(null);
                       if (confirmedDuplicate) setConfirmedDuplicate(false);
-                    }}
-                  />
+                    }} />
                 </FormControl>
+                <FormMessage />
+              </FormItem>
+            )} />
+
+            {/* Category select */}
+            <FormField control={form.control} name="category" render={({ field }) => (
+              <FormItem>
+                <FormLabel>Category</FormLabel>
+                <Select onValueChange={field.onChange} value={field.value ?? ""}>
+                  <FormControl>
+                    <SelectTrigger data-testid="select-medicine-category">
+                      <SelectValue placeholder="Select a category" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {CATEGORIES.map(c => (
+                      <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 <FormMessage />
               </FormItem>
             )} />
@@ -264,19 +255,15 @@ export function MedicineFormModal({ medicine, trigger }: Props) {
             )} />
 
             <div className="flex justify-end gap-2 pt-4">
-               <Button type="button" variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
-                   <Button
-                        type="submit"
-                           disabled={isPending || (!medicine && !existingMedicines)}
-                           data-testid="button-submit-medicine"
-                   >
-                     {!medicine && !existingMedicines
-                       ? "Loading..."
-                       : medicine
-                       ? "Save Changes"
-                       : "Add Medicine"}
-                         </Button>
-                            </div>
+              <Button type="button" variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
+              <Button type="submit"
+                disabled={isPending || (!medicine && !existingMedicines)}
+                data-testid="button-submit-medicine">
+                {!medicine && !existingMedicines
+                  ? "Loading..."
+                  : medicine ? "Save Changes" : "Add Medicine"}
+              </Button>
+            </div>
           </form>
         </Form>
       </DialogContent>
