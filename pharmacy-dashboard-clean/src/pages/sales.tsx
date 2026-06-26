@@ -1,11 +1,19 @@
-import { useGetSales } from "@/lib/queries";
+import { useGetSales, useDeleteSale } from "@/lib/queries";
+import { useAuth } from "@/context/AuthContext";
+import { useToast } from "@/hooks/use-toast";
+import { ApiError } from "@/lib/api-client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel,
+  AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
+  AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Link } from "wouter";
-import { Plus, Search } from "lucide-react";
+import { Plus, Search, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import { useState } from "react";
 import type { Sale } from "@/types/api";
@@ -29,7 +37,10 @@ function itemCount(sale: Sale): number {
 }
 
 export default function Sales() {
+  const { isSuperAdmin } = useAuth();
+  const { toast } = useToast();
   const { data: sales, isLoading } = useGetSales();
+  const deleteSale = useDeleteSale();
   const [search, setSearch] = useState("");
 
   const filtered = sales?.filter(s => {
@@ -39,6 +50,21 @@ export default function Sales() {
       s.customerName?.toLowerCase().includes(q) ||
       s.customerPhone?.toLowerCase().includes(q);
   }) ?? [];
+
+  const handleDelete = (sale: Sale) => {
+    deleteSale.mutate(sale.id, {
+      onSuccess: () => toast({ title: `Sale ${sale.saleNumber ?? sale.id} deleted.` }),
+      onError: (err) => {
+        const msg = err instanceof ApiError ? err.message : "Delete failed.";
+        toast({ title: "Error", description: msg, variant: "destructive" });
+      },
+    });
+  };
+
+  // Column layout depends on whether SUPER_ADMIN (extra delete column)
+  const gridCols = isSuperAdmin
+    ? "grid-cols-[1.4fr_1fr_1.2fr_0.6fr_0.7fr_0.7fr_auto]"
+    : "grid-cols-[1.4fr_1fr_1.2fr_0.6fr_0.7fr_0.7fr]";
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
@@ -56,20 +82,22 @@ export default function Sales() {
         <div className="px-4 py-3 border-b border-border bg-muted/20">
           <div className="relative max-w-sm">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input className="pl-9 h-9 bg-background" placeholder="Search by sale #, customer name or phone…"
+            <Input className="pl-9 h-9 bg-background"
+              placeholder="Search by sale #, customer name or phone…"
               value={search} onChange={e => setSearch(e.target.value)} />
           </div>
         </div>
 
         <CardContent className="p-0">
-          {/* Header row */}
-          <div className="hidden md:grid grid-cols-[1.4fr_1fr_1.2fr_0.6fr_0.7fr_0.8fr] gap-4 px-6 py-3 bg-muted/30 text-xs font-medium text-muted-foreground uppercase tracking-wide border-b border-border">
+          {/* Header */}
+          <div className={`hidden md:grid ${gridCols} gap-4 px-6 py-3 bg-muted/30 text-xs font-medium text-muted-foreground uppercase tracking-wide border-b border-border`}>
             <span>Sale #</span>
             <span>Date</span>
             <span>Customer</span>
             <span>Items</span>
             <span>Payment</span>
             <span className="text-right">Total</span>
+            {isSuperAdmin && <span />}
           </div>
 
           {isLoading ? (
@@ -85,13 +113,14 @@ export default function Sales() {
           ) : (
             filtered.map(sale => (
               <div key={sale.id}
-                className="grid grid-cols-1 md:grid-cols-[1.4fr_1fr_1.2fr_0.6fr_0.7fr_0.8fr] gap-2 md:gap-4 px-6 py-4 border-b border-border last:border-0 hover:bg-muted/10 transition-colors">
+                className={`grid grid-cols-1 md:${gridCols} gap-2 md:gap-4 px-6 py-4 border-b border-border last:border-0 hover:bg-muted/10 transition-colors items-center`}>
 
-                {/* Sale # */}
-                <div className="flex items-center">
-                  <span className="font-mono text-sm font-semibold text-primary">
+                {/* Sale # — clickable for both roles */}
+                <div>
+                  <Link href={`/sales/${sale.id}`}
+                    className="font-mono text-sm font-semibold text-primary hover:underline underline-offset-2">
                     {sale.saleNumber ?? `SAL-${sale.id}`}
-                  </span>
+                  </Link>
                 </div>
 
                 {/* Date */}
@@ -133,6 +162,39 @@ export default function Sales() {
                 <div className="text-right font-mono font-semibold text-sm text-foreground">
                   ₦{saleTotal(sale).toFixed(2)}
                 </div>
+
+                {/* Delete — SUPER_ADMIN only */}
+                {isSuperAdmin && (
+                  <div className="flex justify-end">
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="ghost" size="icon"
+                          className="text-destructive hover:text-destructive hover:bg-destructive/10 h-8 w-8">
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>
+                            Delete {sale.saleNumber ?? `SAL-${sale.id}`}?
+                          </AlertDialogTitle>
+                          <AlertDialogDescription>
+                            This permanently removes the sale record. Stock levels will NOT
+                            be automatically restored. This cannot be undone.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={() => handleDelete(sale)}
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                            Delete
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
+                )}
               </div>
             ))
           )}

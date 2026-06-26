@@ -145,3 +145,19 @@ export function useDeactivateUser() {
   const qc = useQueryClient();
   return useMutation({ mutationFn: (id: number) => apiRequest<UserProfile>(`/api/users/${id}/deactivate`, { method: "PATCH" }), onSuccess: () => qc.invalidateQueries({ queryKey: QK.users() }) });
 }
+export function useGetSale(id: number, options?: Omit<UseQueryOptions<Sale>, "queryKey" | "queryFn">) {
+  return useQuery<Sale>({
+    queryKey: ["sales", id],
+    queryFn: () => apiRequest<Sale>(`/api/sales/${id}`),
+    enabled: !!id,
+    ...options,
+  });
+}
+
+export function useDeleteSale() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => apiRequest<void>(`/api/sales/${id}`, { method: "DELETE" }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: QK.sales() }),
+  });
+}
