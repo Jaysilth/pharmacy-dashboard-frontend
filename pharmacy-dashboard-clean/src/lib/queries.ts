@@ -12,6 +12,8 @@ import type {
   Sale, SaleInput,
   LoginRequest, JwtResponse,
   UserProfile, UserInput,
+  GlassesAccessory, GlassesAccessoryInput,
+  GlassesRepair, GlassesRepairInput,
 } from "@/types/api";
 
 // ── Query key factories ──────────────────────────────────────────────────────
