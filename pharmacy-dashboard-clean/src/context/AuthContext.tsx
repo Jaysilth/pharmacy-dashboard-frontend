@@ -3,6 +3,7 @@ import {
   useContext,
   useState,
   useEffect,
+  useRef,
   useCallback,
   type ReactNode,
 } from "react";
@@ -16,6 +17,36 @@ import {
 } from "@/lib/api-client";
 import type { UserProfile } from "@/types/api";
 
+// ── Configuration ─────────────────────────────────────────────────────────────
+
+/** Inactivity window before auto-logout fires. */
+const INACTIVITY_TIMEOUT_MS = 60 * 60 * 1000; // 1 hour
+
+/**
+ * Minimum interval between timer resets triggered by user activity.
+ * Prevents mousemove from calling clearTimeout/setTimeout hundreds of
+ * times per second — each DOM event still gets heard, but the timer
+ * is only re-armed at most once every RESET_THROTTLE_MS.
+ */
+const RESET_THROTTLE_MS = 5_000; // 5 seconds
+
+/**
+ * Events that indicate genuine user presence.
+ * mousemove is intentionally included but throttled so it doesn't
+ * generate unnecessary overhead. keypress is deprecated — keydown
+ * covers the same intent and is standard.
+ */
+const ACTIVITY_EVENTS: (keyof WindowEventMap)[] = [
+  "click",
+  "mousedown",
+  "mousemove",
+  "keydown",
+  "scroll",
+  "touchstart",
+];
+
+// ── Types ─────────────────────────────────────────────────────────────────────
+
 interface AuthContextValue {
   isAuthenticated: boolean;
   currentUser: UserProfile | null;
@@ -26,12 +57,8 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-/**
- * Decodes the JWT payload (base64) to extract username and roles.
- * This is NOT signature verification — just reading the claims.
- * The backend verified the signature when it issued the token.
- * This lets us know the role instantly, with no API call needed.
- */
+// ── JWT decode (no signature verification — just reading claims) ───────────────
+
 function decodeJwt(token: string): { sub: string; roles: string[] } | null {
   try {
     const base64Url = token.split(".")[1];
@@ -47,11 +74,6 @@ function decodeJwt(token: string): { sub: string; roles: string[] } | null {
   }
 }
 
-/**
- * Builds a minimal UserProfile from the JWT claims.
- * Enough to determine role and display username immediately.
- * The full profile (email, id, timestamps) loads in background via /me.
- */
 function profileFromToken(token: string): UserProfile | null {
   const decoded = decodeJwt(token);
   if (!decoded) return null;
@@ -67,13 +89,13 @@ function profileFromToken(token: string): UserProfile | null {
   };
 }
 
+// ── Provider ──────────────────────────────────────────────────────────────────
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(
     () => !!getToken(),
   );
   const [currentUser, setCurrentUser] = useState<UserProfile | null>(() => {
-    // On page load / refresh: decode existing token immediately so the
-    // sidebar never shows "Loading..." — roles are available right away.
     const token = getToken();
     return token ? profileFromToken(token) : null;
   });
@@ -81,64 +103,149 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const isSuperAdmin =
     currentUser?.roles?.includes("ROLE_SUPER_ADMIN") ?? false;
 
+  // Refs for the inactivity timer and throttle timestamp.
+  // Using refs (not state) because changing them must never trigger re-renders.
+  const inactivityTimerRef  = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastResetTimestampRef = useRef<number>(0);
+
+  // ── Core auth actions ──────────────────────────────────────────────────────
+
   const logout = useCallback(() => {
     clearToken();
     setCurrentUser(null);
     setIsAuthenticated(false);
   }, []);
 
-  /**
-   * Fetches full profile from /api/auth/me (email, id, timestamps).
-   * Failure here does NOT affect authentication or role detection —
-   * those come from the JWT claims decoded above.
-   */
+  const logoutWithSessionExpiredMessage = useCallback(() => {
+    logout();
+    // Defer the alert one tick so React state updates flush first
+    // and the app visually transitions to the login screen before the
+    // dialog blocks the thread.
+    setTimeout(() => {
+      window.alert(
+        "Session Expired: You have been automatically logged out due to 1 hour of inactivity.",
+      );
+    }, 0);
+  }, [logout]);
+
   const loadFullProfile = useCallback(async () => {
     try {
       const profile = await apiRequest<UserProfile>("/api/auth/me");
       setCurrentUser(profile);
     } catch (err) {
-      // Only log out on 401 — anything else keeps the JWT-based session alive.
       if (err instanceof ApiError && err.status === 401) {
         logout();
       }
-      // Other errors (404, 500, network): keep currentUser from JWT claims.
     }
   }, [logout]);
 
-  /**
-   * Called by the login page after a successful POST /api/auth/login.
-   * Roles and username are available instantly from JWT claims.
-   */
   const login = useCallback(
     (token: string) => {
       const cleanToken = token.startsWith("Bearer ") ? token.slice(7) : token;
       setToken(cleanToken);
-
-      // Decode roles and username immediately — no async needed
       const profile = profileFromToken(cleanToken);
       setCurrentUser(profile);
       setIsAuthenticated(true);
-
-      // Load full profile in background for email/id/timestamps
       loadFullProfile();
     },
     [loadFullProfile],
   );
 
-  // On page refresh: token was already decoded in useState initializer above.
-  // Just fetch the full profile in background.
+  // ── Inactivity timer ───────────────────────────────────────────────────────
+
+  /**
+   * Arms (or re-arms) the inactivity timer.
+   * Clears any existing timer before setting a new one so only one
+   * timer is ever live at a time.
+   */
+  const armTimer = useCallback(() => {
+    if (inactivityTimerRef.current !== null) {
+      clearTimeout(inactivityTimerRef.current);
+    }
+    inactivityTimerRef.current = setTimeout(
+      logoutWithSessionExpiredMessage,
+      INACTIVITY_TIMEOUT_MS,
+    );
+  }, [logoutWithSessionExpiredMessage]);
+
+  /**
+   * Throttled activity handler.
+   *
+   * Every activity event calls this. If less than RESET_THROTTLE_MS has
+   * passed since the last reset, the call is dropped — the timer is
+   * already running with plenty of runway. This prevents the high-frequency
+   * mousemove event from hammering clearTimeout/setTimeout in a tight loop.
+   *
+   * Passive event listeners (see addEventListener options below) mean the
+   * browser never has to wait for this function before executing its default
+   * scroll/touch behaviour.
+   */
+  const handleActivity = useCallback(() => {
+    const now = Date.now();
+    if (now - lastResetTimestampRef.current < RESET_THROTTLE_MS) return;
+    lastResetTimestampRef.current = now;
+    armTimer();
+  }, [armTimer]);
+
+  /**
+   * Main inactivity effect.
+   *
+   * Runs when authentication state changes. When the user logs in,
+   * arms the timer and attaches listeners. When the user logs out
+   * (including auto-logout), clears the timer and removes listeners.
+   *
+   * All listeners use `passive: true` so the browser can optimise
+   * scroll and touch performance — our handler never calls
+   * preventDefault(), so passive is safe for every event here.
+   */
+  useEffect(() => {
+    if (!isAuthenticated) {
+      // Clean up if somehow listeners are still attached after logout
+      if (inactivityTimerRef.current !== null) {
+        clearTimeout(inactivityTimerRef.current);
+        inactivityTimerRef.current = null;
+      }
+      return;
+    }
+
+    // Arm the timer immediately on login / mount-while-authenticated
+    armTimer();
+
+    const listenerOptions: AddEventListenerOptions = { passive: true };
+
+    ACTIVITY_EVENTS.forEach((event) => {
+      window.addEventListener(event, handleActivity, listenerOptions);
+    });
+
+    return () => {
+      // Always clear the timer and remove listeners on unmount or
+      // when isAuthenticated flips to false. Prevents memory leaks
+      // and phantom logout alerts after the user has already logged out.
+      if (inactivityTimerRef.current !== null) {
+        clearTimeout(inactivityTimerRef.current);
+        inactivityTimerRef.current = null;
+      }
+      ACTIVITY_EVENTS.forEach((event) => {
+        window.removeEventListener(event, handleActivity, listenerOptions);
+      });
+    };
+  }, [isAuthenticated, armTimer, handleActivity]);
+
+  // ── Page load / refresh ────────────────────────────────────────────────────
+
   useEffect(() => {
     if (getToken()) {
       loadFullProfile();
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Wire the global 401 handler.
   useEffect(() => {
     setUnauthorizedHandler(() => {
       if (getToken()) logout();
     });
   }, [logout]);
+
+  // ── Render ─────────────────────────────────────────────────────────────────
 
   return (
     <AuthContext.Provider
