@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
+import { ClinicalProvider } from "@/context/ClinicalContext";
 
 import Layout from "@/components/layout";
 import Login from "@/pages/login";
@@ -11,6 +12,9 @@ import Medicines from "@/pages/medicines";
 import MedicineDetail from "@/pages/medicine-detail";
 import GlassesPage from "@/pages/glasses";
 import SurgeriesPage from "@/pages/surgeries";
+import ClinicVisitsPage from "@/pages/clinic-visits";
+import ProceduresPage from "@/pages/procedures";
+import LabTestsPage from "@/pages/lab-tests";
 import Sales from "@/pages/sales";
 import NewSale from "@/pages/new-sale";
 import SaleDetail from "@/pages/sale-detail";
@@ -24,21 +28,21 @@ const queryClient = new QueryClient({
 function ProtectedRoutes() {
   const { isAuthenticated, isSuperAdmin } = useAuth();
   if (!isAuthenticated) return <Redirect to="/login" />;
-
   return (
     <Layout>
       <Switch>
-        <Route path="/"              component={Dashboard} />
-        <Route path="/medicines"     component={Medicines} />
-        <Route path="/medicines/:id" component={MedicineDetail} />
-        <Route path="/glasses"       component={GlassesPage} />
-        <Route path="/surgeries"     component={SurgeriesPage} />
-        <Route path="/sales/new"     component={NewSale} />
-        <Route path="/sales/:id"     component={SaleDetail} />
-        <Route path="/sales"         component={Sales} />
-        <Route path="/users">
-          {isSuperAdmin ? <UsersPage /> : <Redirect to="/" />}
-        </Route>
+        <Route path="/"               component={Dashboard} />
+        <Route path="/medicines"      component={Medicines} />
+        <Route path="/medicines/:id"  component={MedicineDetail} />
+        <Route path="/glasses"        component={GlassesPage} />
+        <Route path="/surgeries"      component={SurgeriesPage} />
+        <Route path="/clinic-visits"  component={ClinicVisitsPage} />
+        <Route path="/procedures"     component={ProceduresPage} />
+        <Route path="/lab-tests"      component={LabTestsPage} />
+        <Route path="/sales/new"      component={NewSale} />
+        <Route path="/sales/:id"      component={SaleDetail} />
+        <Route path="/sales"          component={Sales} />
+        <Route path="/users">{isSuperAdmin ? <UsersPage /> : <Redirect to="/" />}</Route>
         <Route component={NotFound} />
       </Switch>
     </Layout>
@@ -59,12 +63,14 @@ export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <TooltipProvider>
-          <WouterRouter>
-            <Router />
-          </WouterRouter>
-          <Toaster />
-        </TooltipProvider>
+        <ClinicalProvider>
+          <TooltipProvider>
+            <WouterRouter>
+              <Router />
+            </WouterRouter>
+            <Toaster />
+          </TooltipProvider>
+        </ClinicalProvider>
       </AuthProvider>
     </QueryClientProvider>
   );

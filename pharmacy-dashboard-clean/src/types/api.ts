@@ -152,3 +152,46 @@ export interface UserInput {
   password: string;
   roles: string[];
 }
+
+// ── Glasses Accessories ──────────────────────────────────────────────────────
+
+export interface GlassesAccessory {
+  id: number;
+  name: string;
+  accessoryType: "ROPE_THIN" | "ROPE_FAT" | "CASE_PLASTIC" | "CASE_WOODEN";
+  price: number;
+  quantity: number;
+  lowStockThreshold: number;
+  description?: string;
+  lowStock: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface GlassesAccessoryInput {
+  name: string;
+  accessoryType: string;
+  price: number;
+  quantity: number;
+  lowStockThreshold?: number;
+  description?: string;
+}
+
+// ── Glasses Repairs ──────────────────────────────────────────────────────────
+
+export interface GlassesRepair {
+  id: number;
+  name: string;
+  description?: string;
+  price: number;
+  active: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface GlassesRepairInput {
+  name: string;
+  description?: string;
+  price: number;
+  active?: boolean;
+}

@@ -161,3 +161,40 @@ export function useDeleteSale() {
     onSuccess: () => qc.invalidateQueries({ queryKey: QK.sales() }),
   });
 }
+
+// ── Glasses Accessories ──────────────────────────────────────────────────────
+
+export function useGetGlassesAccessories(params?: { search?: string }, options?: Omit<UseQueryOptions<GlassesAccessory[]>, "queryKey" | "queryFn">) {
+  const q = params?.search ? `?search=${encodeURIComponent(params.search)}` : "";
+  return useQuery<GlassesAccessory[]>({ queryKey: ["glasses-accessories", params ?? {}], queryFn: () => apiRequest<GlassesAccessory[]>(`/api/glasses-accessories${q}`), ...options });
+}
+export function useCreateGlassesAccessory() {
+  const qc = useQueryClient();
+  return useMutation({ mutationFn: (d: GlassesAccessoryInput) => apiRequest<GlassesAccessory>("/api/glasses-accessories", { method: "POST", body: d }), onSuccess: () => qc.invalidateQueries({ queryKey: ["glasses-accessories"] }) });
+}
+export function useUpdateGlassesAccessory() {
+  const qc = useQueryClient();
+  return useMutation({ mutationFn: ({ id, data }: { id: number; data: GlassesAccessoryInput }) => apiRequest<GlassesAccessory>(`/api/glasses-accessories/${id}`, { method: "PUT", body: data }), onSuccess: () => qc.invalidateQueries({ queryKey: ["glasses-accessories"] }) });
+}
+export function useDeleteGlassesAccessory() {
+  const qc = useQueryClient();
+  return useMutation({ mutationFn: (id: number) => apiRequest<void>(`/api/glasses-accessories/${id}`, { method: "DELETE" }), onSuccess: () => qc.invalidateQueries({ queryKey: ["glasses-accessories"] }) });
+}
+
+// ── Glasses Repairs ──────────────────────────────────────────────────────────
+
+export function useGetGlassesRepairs(options?: Omit<UseQueryOptions<GlassesRepair[]>, "queryKey" | "queryFn">) {
+  return useQuery<GlassesRepair[]>({ queryKey: ["glasses-repairs"], queryFn: () => apiRequest<GlassesRepair[]>("/api/glasses-repairs"), ...options });
+}
+export function useCreateGlassesRepair() {
+  const qc = useQueryClient();
+  return useMutation({ mutationFn: (d: GlassesRepairInput) => apiRequest<GlassesRepair>("/api/glasses-repairs", { method: "POST", body: d }), onSuccess: () => qc.invalidateQueries({ queryKey: ["glasses-repairs"] }) });
+}
+export function useUpdateGlassesRepair() {
+  const qc = useQueryClient();
+  return useMutation({ mutationFn: ({ id, data }: { id: number; data: GlassesRepairInput }) => apiRequest<GlassesRepair>(`/api/glasses-repairs/${id}`, { method: "PUT", body: data }), onSuccess: () => qc.invalidateQueries({ queryKey: ["glasses-repairs"] }) });
+}
+export function useDeleteGlassesRepair() {
+  const qc = useQueryClient();
+  return useMutation({ mutationFn: (id: number) => apiRequest<void>(`/api/glasses-repairs/${id}`, { method: "DELETE" }), onSuccess: () => qc.invalidateQueries({ queryKey: ["glasses-repairs"] }) });
+}
