@@ -2,6 +2,7 @@ import { Switch, Route, Router as WouterRouter, Redirect } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { ThemeProvider } from "@/context/ThemeContext";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
 import { ClinicalProvider } from "@/context/ClinicalContext";
 
@@ -42,7 +43,9 @@ function ProtectedRoutes() {
         <Route path="/sales/new"      component={NewSale} />
         <Route path="/sales/:id"      component={SaleDetail} />
         <Route path="/sales"          component={Sales} />
-        <Route path="/users">{isSuperAdmin ? <UsersPage /> : <Redirect to="/" />}</Route>
+        <Route path="/users">
+          {isSuperAdmin ? <UsersPage /> : <Redirect to="/" />}
+        </Route>
         <Route component={NotFound} />
       </Switch>
     </Layout>
@@ -53,7 +56,9 @@ function Router() {
   const { isAuthenticated } = useAuth();
   return (
     <Switch>
-      <Route path="/login">{isAuthenticated ? <Redirect to="/" /> : <Login />}</Route>
+      <Route path="/login">
+        {isAuthenticated ? <Redirect to="/" /> : <Login />}
+      </Route>
       <Route><ProtectedRoutes /></Route>
     </Switch>
   );
@@ -61,17 +66,19 @@ function Router() {
 
 export default function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <ClinicalProvider>
-          <TooltipProvider>
-            <WouterRouter>
-              <Router />
-            </WouterRouter>
-            <Toaster />
-          </TooltipProvider>
-        </ClinicalProvider>
-      </AuthProvider>
-    </QueryClientProvider>
+    <ThemeProvider>
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <ClinicalProvider>
+            <TooltipProvider>
+              <WouterRouter>
+                <Router />
+              </WouterRouter>
+              <Toaster />
+            </TooltipProvider>
+          </ClinicalProvider>
+        </AuthProvider>
+      </QueryClientProvider>
+    </ThemeProvider>
   );
 }

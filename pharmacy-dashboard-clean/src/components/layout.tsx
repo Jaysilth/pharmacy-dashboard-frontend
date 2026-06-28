@@ -1,92 +1,343 @@
+import { useEffect, useState } from "react";
 import { Link, useLocation } from "wouter";
 import {
-  Activity, Pill, Receipt, PlusCircle, LayoutDashboard,
-  LogOut, User, Users, Glasses, Stethoscope,
-  Calendar, FileText, FlaskConical,
+  Activity, LayoutDashboard, Pill, Glasses, Stethoscope,
+  Calendar, FileText, FlaskConical, Receipt, PlusCircle,
+  Users, LogOut, User, Menu, X, Sun, Moon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
+import { useTheme } from "@/context/ThemeContext";
 import { Button } from "@/components/ui/button";
 
-export default function Layout({ children }: { children: React.ReactNode }) {
+// ── Navigation definition ─────────────────────────────────────────────────────
+
+const NAV_GROUPS = [
+  {
+    label: "",
+    items: [
+      { name: "Dashboard", href: "/",             icon: LayoutDashboard },
+    ],
+  },
+  {
+    label: "Inventory",
+    items: [
+      { name: "Medicines", href: "/medicines",    icon: Pill },
+      { name: "Glasses",   href: "/glasses",      icon: Glasses },
+      { name: "Surgeries", href: "/surgeries",    icon: Stethoscope },
+    ],
+  },
+  {
+    label: "Clinical",
+    items: [
+      { name: "Visits",      href: "/clinic-visits", icon: Calendar },
+      { name: "Procedures",  href: "/procedures",    icon: FileText },
+      { name: "Lab Tests",   href: "/lab-tests",     icon: FlaskConical },
+    ],
+  },
+  {
+    label: "Sales",
+    items: [
+      { name: "Sales Log",  href: "/sales",       icon: Receipt },
+      { name: "New Sale",   href: "/sales/new",   icon: PlusCircle },
+    ],
+  },
+];
+
+const ADMIN_ITEM = { name: "Users", href: "/users", icon: Users };
+
+// ── Nav link atom ─────────────────────────────────────────────────────────────
+
+function NavLink({
+  item,
+  onClick,
+}: {
+  item: { name: string; href: string; icon: React.ElementType };
+  onClick?: () => void;
+}) {
   const [location] = useLocation();
+  const isActive =
+    location === item.href ||
+    (item.href !== "/" && location.startsWith(item.href));
+  const Icon = item.icon;
+
+  return (
+    <Link
+      href={item.href}
+      onClick={onClick}
+      className={cn(
+        "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium",
+        "transition-all duration-150 select-none",
+        isActive
+          ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-sm"
+          : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-foreground",
+      )}
+    >
+      <Icon className="h-4 w-4 flex-shrink-0" />
+      {item.name}
+    </Link>
+  );
+}
+
+// ── Nav body (shared between sidebar and drawer) ──────────────────────────────
+
+function NavBody({
+  isSuperAdmin,
+  onItemClick,
+}: {
+  isSuperAdmin: boolean;
+  onItemClick?: () => void;
+}) {
+  const groups = isSuperAdmin
+    ? [...NAV_GROUPS, { label: "Admin", items: [ADMIN_ITEM] }]
+    : NAV_GROUPS;
+
+  return (
+    <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-5">
+      {groups.map((group) => (
+        <div key={group.label}>
+          {group.label && (
+            <p className="px-3 mb-1.5 text-[10px] font-bold uppercase tracking-widest text-sidebar-foreground/40">
+              {group.label}
+            </p>
+          )}
+          <div className="space-y-0.5">
+            {group.items.map((item) => (
+              <NavLink key={item.href} item={item} onClick={onItemClick} />
+            ))}
+          </div>
+        </div>
+      ))}
+    </nav>
+  );
+}
+
+// ── Theme toggle button ───────────────────────────────────────────────────────
+
+function ThemeToggle({ compact = false }: { compact?: boolean }) {
+  const { isDark, toggleTheme } = useTheme();
+  return (
+    <button
+      onClick={toggleTheme}
+      className={cn(
+        "flex items-center gap-2 rounded-xl transition-all duration-200",
+        "text-sidebar-foreground/70 hover:text-sidebar-foreground",
+        "hover:bg-sidebar-accent active:scale-95",
+        compact ? "p-2" : "px-3 py-2 text-xs font-medium w-full",
+      )}
+      aria-label="Toggle theme"
+    >
+      {isDark ? (
+        <Sun className="h-4 w-4 flex-shrink-0 text-amber-400" />
+      ) : (
+        <Moon className="h-4 w-4 flex-shrink-0" />
+      )}
+      {!compact && (
+        <span>{isDark ? "Light mode" : "Dark mode"}</span>
+      )}
+    </button>
+  );
+}
+
+// ── Main Layout ───────────────────────────────────────────────────────────────
+
+export default function Layout({ children }: { children: React.ReactNode }) {
+  const [drawerOpen, setDrawerOpen] = useState(false);
   const { logout, currentUser, isSuperAdmin } = useAuth();
+  const [location] = useLocation();
 
-  const navigation = [
-    { name: "Dashboard",   href: "/",              icon: LayoutDashboard, group: "" },
-    { name: "Medicines",   href: "/medicines",     icon: Pill,            group: "Inventory" },
-    { name: "Glasses",     href: "/glasses",       icon: Glasses,         group: "Inventory" },
-    { name: "Surgeries",   href: "/surgeries",     icon: Stethoscope,     group: "Inventory" },
-    { name: "Visits",      href: "/clinic-visits", icon: Calendar,        group: "Clinical" },
-    { name: "Procedures",  href: "/procedures",    icon: FileText,        group: "Clinical" },
-    { name: "Lab Tests",   href: "/lab-tests",     icon: FlaskConical,    group: "Clinical" },
-    { name: "Sales",       href: "/sales",         icon: Receipt,         group: "Sales" },
-    { name: "New Sale",    href: "/sales/new",     icon: PlusCircle,      group: "Sales" },
-    ...(isSuperAdmin ? [{ name: "Users", href: "/users", icon: Users, group: "Admin" }] : []),
-  ];
+  // Close drawer on route change
+  useEffect(() => {
+    setDrawerOpen(false);
+  }, [location]);
 
-  const groups = ["", "Inventory", "Clinical", "Sales", ...(isSuperAdmin ? ["Admin"] : [])];
+  // Prevent body scroll when drawer is open
+  useEffect(() => {
+    if (drawerOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [drawerOpen]);
 
   const displayName = currentUser?.username ?? "Loading…";
   const displayRole = isSuperAdmin ? "Super Admin" : "Admin";
 
-  const NavLink = ({ item }: { item: typeof navigation[0] }) => {
-    const isActive = location === item.href || (item.href !== "/" && location.startsWith(item.href));
-    return (
-      <Link href={item.href}
-        className={cn("flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors",
-          isActive ? "bg-sidebar-primary text-sidebar-primary-foreground" : "text-sidebar-foreground hover:bg-sidebar-accent")}
-        data-testid={`nav-${item.name.toLowerCase().replace(/\s/g, "-")}`}>
-        <item.icon className="h-4 w-4 mr-3 flex-shrink-0" />{item.name}
-      </Link>
-    );
-  };
+  // ── Profile + logout section ──────────────────────────────────────────────
+
+  const ProfileSection = ({ onLogout }: { onLogout: () => void }) => (
+    <div className="px-3 pb-4 space-y-1">
+      <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-sidebar-accent/60">
+        <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
+          <User className="h-4 w-4 text-primary" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-xs font-semibold text-sidebar-foreground truncate">
+            {displayName}
+          </p>
+          <p className="text-[10px] text-sidebar-foreground/50">{displayRole}</p>
+        </div>
+      </div>
+      <ThemeToggle />
+      <button
+        onClick={onLogout}
+        className="flex items-center gap-2 w-full px-3 py-2 rounded-xl text-xs font-medium
+          text-sidebar-foreground/70 hover:text-destructive hover:bg-destructive/10
+          transition-all duration-150"
+        data-testid="button-logout"
+      >
+        <LogOut className="h-4 w-4" />
+        Sign out
+      </button>
+    </div>
+  );
 
   return (
-    <div className="flex min-h-screen w-full bg-background">
-      <aside className="w-60 flex-col hidden md:flex border-r bg-sidebar overflow-y-auto">
-        <div className="h-16 flex items-center px-5 border-b border-sidebar-border flex-shrink-0">
-          <Activity className="h-5 w-5 text-primary mr-2 flex-shrink-0" />
-          <span className="font-semibold text-sm text-sidebar-foreground leading-tight">JotessEyeSpecialist</span>
+    <div className="min-h-screen flex bg-background">
+
+      {/* ══════════════════════════════════════════
+          DESKTOP SIDEBAR (hidden on mobile)
+      ══════════════════════════════════════════ */}
+      <aside
+        className={cn(
+          "hidden md:flex w-60 flex-col flex-shrink-0",
+          "bg-sidebar border-r border-sidebar-border",
+          // Subtle blueprint grid (matches login panel)
+          "relative overflow-hidden",
+        )}
+      >
+        {/* Blueprint grid overlay (decorative) */}
+        <div
+          className="pointer-events-none absolute inset-0 opacity-[0.03]"
+          style={{
+            backgroundImage:
+              "linear-gradient(to right, currentColor 1px, transparent 1px), linear-gradient(to bottom, currentColor 1px, transparent 1px)",
+            backgroundSize: "20px 20px",
+          }}
+        />
+
+        {/* Logo */}
+        <div className="relative flex items-center gap-2.5 h-16 px-5 border-b border-sidebar-border flex-shrink-0">
+          <Activity className="h-5 w-5 text-primary flex-shrink-0" />
+          <div className="leading-none">
+            <span className="text-sm font-black tracking-widest uppercase text-sidebar-foreground">
+              JOTESS
+            </span>
+            <span className="block text-[9px] font-semibold tracking-[0.25em] uppercase text-primary/70 mt-0.5">
+              EYE SPECIALIST
+            </span>
+          </div>
         </div>
 
-        <nav className="flex-1 px-3 py-4 space-y-4">
-          {groups.map(group => {
-            const items = navigation.filter(n => n.group === group);
-            if (items.length === 0) return null;
-            return (
-              <div key={group}>
-                {group && <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold px-3 mb-1">{group}</p>}
-                <div className="space-y-0.5">{items.map(item => <NavLink key={item.href} item={item} />)}</div>
-              </div>
-            );
-          })}
-        </nav>
+        {/* Navigation */}
+        <NavBody isSuperAdmin={isSuperAdmin} />
 
-        <div className="px-3 py-4 border-t border-sidebar-border flex-shrink-0 space-y-2">
-          <div className="flex items-center px-3 py-2 rounded-md bg-muted/50 border border-border">
-            <div className="bg-primary/20 p-1.5 rounded-full mr-2.5 flex-shrink-0"><User className="h-3.5 w-3.5 text-primary" /></div>
-            <div className="flex flex-col min-w-0">
-              <span className="text-xs font-medium text-foreground truncate">{displayName}</span>
-              <span className="text-[10px] text-muted-foreground">{displayRole}</span>
-            </div>
-          </div>
-          <Button variant="ghost" size="sm" className="w-full justify-start text-sidebar-foreground hover:bg-sidebar-accent" onClick={logout} data-testid="button-logout">
-            <LogOut className="h-4 w-4 mr-2" />Sign out
-          </Button>
+        {/* Profile + theme toggle */}
+        <div className="border-t border-sidebar-border">
+          <ProfileSection onLogout={logout} />
         </div>
       </aside>
 
-      <main className="flex-1 flex flex-col min-w-0">
-        <header className="h-14 border-b bg-background flex items-center justify-between px-4 md:hidden sticky top-0 z-40">
-          <div className="flex items-center">
-            <Activity className="h-5 w-5 text-primary mr-2" />
-            <span className="font-semibold text-sm">JotessEyeSpecialist</span>
+      {/* ══════════════════════════════════════════
+          MOBILE SLIDE-IN DRAWER
+      ══════════════════════════════════════════ */}
+
+      {/* Backdrop */}
+      <div
+        className={cn(
+          "fixed inset-0 z-40 md:hidden",
+          "bg-black/60 backdrop-blur-sm",
+          "transition-opacity duration-300",
+          drawerOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none",
+        )}
+        onClick={() => setDrawerOpen(false)}
+        aria-hidden="true"
+      />
+
+      {/* Drawer panel */}
+      <aside
+        className={cn(
+          "fixed inset-y-0 left-0 z-50 w-72 flex flex-col md:hidden",
+          "bg-sidebar border-r border-sidebar-border",
+          "transition-transform duration-300 ease-in-out",
+          drawerOpen ? "translate-x-0" : "-translate-x-full",
+        )}
+      >
+        {/* Drawer header */}
+        <div className="flex items-center justify-between h-16 px-5 border-b border-sidebar-border flex-shrink-0">
+          <div className="flex items-center gap-2.5">
+            <Activity className="h-5 w-5 text-primary" />
+            <div className="leading-none">
+              <span className="text-sm font-black tracking-widest uppercase text-sidebar-foreground">
+                JOTESS
+              </span>
+              <span className="block text-[9px] font-semibold tracking-[0.25em] uppercase text-primary/70 mt-0.5">
+                EYE SPECIALIST
+              </span>
+            </div>
           </div>
-          <Button variant="ghost" size="icon" onClick={logout}><LogOut className="h-4 w-4" /></Button>
+          <button
+            onClick={() => setDrawerOpen(false)}
+            className="p-1.5 rounded-lg text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent transition-colors"
+            aria-label="Close menu"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        {/* Drawer nav */}
+        <NavBody
+          isSuperAdmin={isSuperAdmin}
+          onItemClick={() => setDrawerOpen(false)}
+        />
+
+        {/* Drawer profile */}
+        <div className="border-t border-sidebar-border">
+          <ProfileSection onLogout={() => { logout(); setDrawerOpen(false); }} />
+        </div>
+      </aside>
+
+      {/* ══════════════════════════════════════════
+          MAIN CONTENT AREA
+      ══════════════════════════════════════════ */}
+      <div className="flex-1 flex flex-col min-w-0">
+
+        {/* ── Mobile top header ── */}
+        <header
+          className={cn(
+            "md:hidden flex items-center justify-between",
+            "h-14 px-4 flex-shrink-0",
+            "bg-sidebar border-b border-sidebar-border",
+          )}
+        >
+          <button
+            onClick={() => setDrawerOpen(true)}
+            className="p-2 rounded-xl text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent transition-colors"
+            aria-label="Open menu"
+          >
+            <Menu className="h-5 w-5" />
+          </button>
+
+          <div className="flex items-center gap-2">
+            <Activity className="h-4 w-4 text-primary" />
+            <span className="text-sm font-black tracking-widest uppercase text-sidebar-foreground">
+              JOTESS
+            </span>
+          </div>
+
+          <ThemeToggle compact />
         </header>
-        <div className="flex-1 overflow-auto p-4 md:p-6">{children}</div>
-      </main>
+
+        {/* ── Page content ── */}
+        <main className="flex-1 overflow-auto">
+          <div className="p-4 sm:p-6 lg:p-8 max-w-[1400px] mx-auto">
+            {children}
+          </div>
+        </main>
+      </div>
     </div>
   );
 }
