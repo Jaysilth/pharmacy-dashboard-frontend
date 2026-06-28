@@ -29,7 +29,7 @@ type LoginForm = z.infer<typeof loginSchema>;
 // ── Doctor image (add the file at this path) ──────────────────────────────────
 // If the asset is missing Vite will throw a build error — move the file to
 // src/assets/images/ or update the path below.
-import doctorImg from "@/assets/images/01ae675a461efa0e5b97da06f016e81c.jpg";
+import doctorImg from "@/assets/images/01ae675a461efa0e5b97da06f016e81c.jpg.jpeg";
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
