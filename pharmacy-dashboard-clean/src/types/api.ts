@@ -15,6 +15,7 @@ export interface Medicine {
   lowStockThreshold: number;
   description?: string | null;
   manufacturer?: string | null;
+  batchLabel?: string | null;  // "A", "B", "C"...
   createdAt: string;
   updatedAt: string;
   isExpired: boolean;
@@ -30,6 +31,13 @@ export interface MedicineInput {
   lowStockThreshold?: number;
   description?: string;
   manufacturer?: string;
+}
+
+export interface BatchCheckResult {
+  status: "NO_MATCH" | "EXACT_MATCH" | "NAME_EXISTS";
+  exactMatchId?: number;
+  exactMatchBatchLabel?: string;
+  existingBatches: Medicine[];
 }
 
 export interface Glasses {

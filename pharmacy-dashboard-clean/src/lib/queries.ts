@@ -14,6 +14,7 @@ import type {
   UserProfile, UserInput,
   GlassesAccessory, GlassesAccessoryInput,
   GlassesRepair, GlassesRepairInput,
+  BatchCheckResult,
 } from "@/types/api";
 
 // ── Query key factories ──────────────────────────────────────────────────────
@@ -32,6 +33,23 @@ export const QK = {
   recentSales:         () => ["dashboard", "recent-sales"],
   users:               () => ["users"],
 } as const;
+
+/**
+ * Checks for an existing batch before the add-medicine form submits.
+ * Not a hook — called imperatively inside onSubmit.
+ */
+export async function checkMedicineBatch(
+  name: string,
+  price: number,
+  expiryDate: string,
+): Promise<BatchCheckResult> {
+  const params = new URLSearchParams({
+    name,
+    price: String(price),
+    expiryDate,
+  });
+  return apiRequest<BatchCheckResult>(`/api/medicines/batch-check?${params}`);
+}
 
 // ── Medicine hooks ───────────────────────────────────────────────────────────
 export function useGetMedicines(params?: { search?: string }, options?: Omit<UseQueryOptions<Medicine[]>, "queryKey" | "queryFn">) {
