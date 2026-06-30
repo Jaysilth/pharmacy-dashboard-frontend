@@ -31,6 +31,8 @@ export interface MedicineInput {
   lowStockThreshold?: number;
   description?: string;
   manufacturer?: string;
+  batchAction?: string;
+  targetBatchId?: number;
 }
 
 export interface BatchCheckResult {

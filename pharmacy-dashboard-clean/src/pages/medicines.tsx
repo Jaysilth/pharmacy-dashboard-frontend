@@ -49,7 +49,6 @@ export default function Medicines() {
 
   const deleteMedicine = useDeleteMedicine();
 
-  // Client-side category filter (data is already fetched)
   const filtered = medicines?.filter(m =>
     !activeCategory || m.category === activeCategory
   ) ?? [];
@@ -73,7 +72,6 @@ export default function Medicines() {
 
       <Card className="shadow-sm border-border">
         <CardHeader className="py-3 px-4 border-b border-border bg-muted/20 space-y-3">
-          {/* Search */}
           <div className="relative max-w-md">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input placeholder="Search by name or manufacturer…" className="pl-9 bg-background"
@@ -81,7 +79,6 @@ export default function Medicines() {
               data-testid="input-search-medicines" />
           </div>
 
-          {/* Category filter tabs */}
           <div className="flex gap-1.5 flex-wrap">
             {CATEGORIES.map(cat => (
               <button key={cat.value} onClick={() => setActiveCategory(cat.value)}
@@ -102,7 +99,7 @@ export default function Medicines() {
           </div>
         </CardHeader>
 
-        <CardContent className="p-0">
+        <CardContent className="p-0 overflow-x-auto">
           <Table>
             <TableHeader className="bg-muted/30">
               <TableRow>
@@ -128,7 +125,20 @@ export default function Medicines() {
                 filtered.map(med => (
                   <TableRow key={med.id} className="hover:bg-muted/10 transition-colors"
                     data-testid={`row-medicine-${med.id}`}>
-                    <TableCell className="pl-6 font-medium">{med.name}</TableCell>
+                    {/* ── ONLY CHANGED CELL: now shows batch label badge ── */}
+                    <TableCell className="pl-6 font-medium">
+                      <div className="flex items-center gap-2">
+                        <span>{med.name}</span>
+                        {med.batchLabel && (
+                          <Badge
+                            variant="outline"
+                            className="font-mono text-[10px] px-1.5 py-0 bg-muted/50 text-muted-foreground border-border"
+                          >
+                            Batch {med.batchLabel}
+                          </Badge>
+                        )}
+                      </div>
+                    </TableCell>
                     <TableCell>
                       {med.category ? (
                         <Badge variant="outline" className={CATEGORY_BADGE[med.category] ?? ""}>
@@ -173,9 +183,9 @@ export default function Medicines() {
                           </AlertDialogTrigger>
                           <AlertDialogContent>
                             <AlertDialogHeader>
-                              <AlertDialogTitle>Delete {med.name}?</AlertDialogTitle>
+                              <AlertDialogTitle>Delete {med.name}{med.batchLabel ? ` (Batch ${med.batchLabel})` : ""}?</AlertDialogTitle>
                               <AlertDialogDescription>
-                                This permanently removes {med.name} from your inventory.
+                                This permanently removes this batch from your inventory.
                                 This cannot be undone.
                               </AlertDialogDescription>
                             </AlertDialogHeader>

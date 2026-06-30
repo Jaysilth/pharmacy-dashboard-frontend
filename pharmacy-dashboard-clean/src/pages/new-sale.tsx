@@ -95,7 +95,7 @@ export default function NewSale() {
   // Build unified display list
   type DisplayItem = { id: number | string; name: string; price: number; quantity?: number; isClinical?: boolean };
   const displayItems: DisplayItem[] = (() => {
-    if (tab === "MEDICINE")          return (medicines ?? []).map(m => ({ id: m.id, name: m.name, price: Number(m.price), quantity: m.quantity }));
+    if (tab === "MEDICINE") return (medicines ?? []).map(m => ({ id: m.id, name: m.batchLabel ? `${m.name} · Batch ${m.batchLabel}` : m.name, price: Number(m.price), quantity: m.quantity }));
     if (tab === "GLASSES")           return (glasses ?? []).map(g => ({ id: g.id, name: `${g.name}${g.brand ? ` (${g.brand})` : ""}`, price: Number(g.price), quantity: g.quantity }));
     if (tab === "GLASSES_ACCESSORY") return (accessories ?? []).map(a => ({ id: a.id, name: a.name, price: Number(a.price), quantity: a.quantity }));
     if (tab === "GLASSES_REPAIR")    return (repairs ?? []).map(r => ({ id: r.id, name: r.name, price: Number(r.price) }));
