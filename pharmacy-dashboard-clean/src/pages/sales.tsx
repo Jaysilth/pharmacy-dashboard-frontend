@@ -62,9 +62,13 @@ export default function Sales() {
   };
 
   // Column layout depends on whether SUPER_ADMIN (extra delete column)
-  const gridCols = isSuperAdmin
-    ? "grid-cols-[1.4fr_1fr_1.2fr_0.6fr_0.7fr_0.7fr_auto]"
-    : "grid-cols-[1.4fr_1fr_1.2fr_0.6fr_0.7fr_0.7fr]";
+  const headerClass = isSuperAdmin
+    ? "hidden md:grid md:grid-cols-[1.4fr_1fr_1.2fr_0.6fr_0.7fr_0.7fr_auto] gap-4 px-6 py-3 bg-muted/30 text-xs font-medium text-muted-foreground uppercase tracking-wide border-b border-border"
+    : "hidden md:grid md:grid-cols-[1.4fr_1fr_1.2fr_0.6fr_0.7fr_0.7fr] gap-4 px-6 py-3 bg-muted/30 text-xs font-medium text-muted-foreground uppercase tracking-wide border-b border-border";
+
+  const rowClass = isSuperAdmin
+    ? "grid grid-cols-1 md:grid-cols-[1.4fr_1fr_1.2fr_0.6fr_0.7fr_0.7fr_auto] gap-2 md:gap-4 px-6 py-4 border-b border-border last:border-0 hover:bg-muted/10 transition-colors items-center"
+    : "grid grid-cols-1 md:grid-cols-[1.4fr_1fr_1.2fr_0.6fr_0.7fr_0.7fr] gap-2 md:gap-4 px-6 py-4 border-b border-border last:border-0 hover:bg-muted/10 transition-colors items-center";
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
@@ -90,7 +94,7 @@ export default function Sales() {
 
         <CardContent className="p-0">
           {/* Header */}
-          <div className={`hidden md:grid ${gridCols} gap-4 px-6 py-3 bg-muted/30 text-xs font-medium text-muted-foreground uppercase tracking-wide border-b border-border`}>
+          <div className={headerClass}>
             <span>Sale #</span>
             <span>Date</span>
             <span>Customer</span>
@@ -112,8 +116,7 @@ export default function Sales() {
             </div>
           ) : (
             filtered.map(sale => (
-              <div key={sale.id}
-                className={`grid grid-cols-1 md:${gridCols} gap-2 md:gap-4 px-6 py-4 border-b border-border last:border-0 hover:bg-muted/10 transition-colors items-center`}>
+              <div key={sale.id} className={rowClass}>
 
                 {/* Sale # — clickable for both roles */}
                 <div>
