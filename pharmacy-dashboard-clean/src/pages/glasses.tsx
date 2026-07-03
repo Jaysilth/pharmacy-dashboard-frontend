@@ -22,10 +22,13 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Edit, Trash2, Search } from "lucide-react";
+import { Plus, Edit, Trash2, Search, ChevronLeft, ChevronRight } from "lucide-react"; // ← CHANGED: added ChevronLeft, ChevronRight
 import { cn } from "@/lib/utils";
 
 type GlassesTab = "FRAMES" | "ACCESSORIES" | "REPAIRS";
+
+// ── ADDED: Pagination constant ─────────────────────────────────────────────
+const ITEMS_PER_PAGE = 10;
 
 const ACCESSORY_TYPE_LABELS: Record<string, string> = {
   ROPE_THIN:    "Rope — Thin",
@@ -44,7 +47,79 @@ const ACCESSORY_COLORS: Record<string, string> = {
   OTHER:        "bg-zinc-100 text-zinc-800 border-zinc-200",
 };
 
-// ── Glasses Frame/Lens Modal (unchanged logic) ─────────────────────────────
+// ── ADDED: Reusable sort helper — sorts any array alphabetically by .name ──
+function sortByName<T extends { name: string }>(items: T[]): T[] {
+  return [...items].sort((a, b) =>
+    a.name.trim().toLowerCase().localeCompare(b.name.trim().toLowerCase())
+  );
+}
+
+// ── ADDED: Reusable Pagination Controls component ──────────────────────────
+function PaginationControls({
+  currentPage,
+  totalPages,
+  onPageChange,
+  totalItems,
+}: {
+  currentPage: number;
+  totalPages: number;
+  onPageChange: (page: number) => void;
+  totalItems: number;
+}) {
+  if (totalPages <= 1) return null;
+
+  const startItem = (currentPage - 1) * ITEMS_PER_PAGE + 1;
+  const endItem   = Math.min(currentPage * ITEMS_PER_PAGE, totalItems);
+
+  return (
+    <div className="flex items-center justify-between px-6 py-3 border-t border-border">
+      {/* Item count */}
+      <span className="text-sm text-muted-foreground">
+        Showing {startItem}–{endItem} of {totalItems} items
+      </span>
+
+      {/* Page buttons */}
+      <div className="flex items-center gap-1">
+        {/* Previous */}
+        <Button
+          variant="outline"
+          size="icon"
+          className="h-8 w-8"
+          onClick={() => onPageChange(currentPage - 1)}
+          disabled={currentPage === 1}
+        >
+          <ChevronLeft className="h-4 w-4" />
+        </Button>
+
+        {/* Numbered pages */}
+        {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+          <Button
+            key={page}
+            variant={currentPage === page ? "default" : "outline"}
+            size="icon"
+            className="h-8 w-8 text-xs"
+            onClick={() => onPageChange(page)}
+          >
+            {page}
+          </Button>
+        ))}
+
+        {/* Next */}
+        <Button
+          variant="outline"
+          size="icon"
+          className="h-8 w-8"
+          onClick={() => onPageChange(currentPage + 1)}
+          disabled={currentPage === totalPages}
+        >
+          <ChevronRight className="h-4 w-4" />
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+// ── Glasses Frame/Lens Modal (unchanged) ───────────────────────────────────
 const glassesSchema = z.object({
   name: z.string().min(1), brand: z.string().optional(), frameType: z.string().optional(),
   lensType: z.string().optional(), color: z.string().optional(),
@@ -100,7 +175,7 @@ function GlassesFormModal({ glasses, trigger }: { glasses?: Glasses; trigger?: R
   );
 }
 
-// ── Accessory Modal ────────────────────────────────────────────────────────
+// ── Accessory Modal (unchanged) ────────────────────────────────────────────
 const accSchema = z.object({
   name: z.string().min(1), accessoryType: z.string().min(1),
   price: z.coerce.number().min(0.01), quantity: z.coerce.number().min(0),
@@ -157,7 +232,7 @@ function AccessoryModal({ item, trigger }: { item?: GlassesAccessory; trigger?: 
   );
 }
 
-// ── Repair Modal ───────────────────────────────────────────────────────────
+// ── Repair Modal (unchanged) ───────────────────────────────────────────────
 const repairSchema = z.object({
   name: z.string().min(1), description: z.string().optional(),
   price: z.coerce.number().min(0.01), active: z.boolean().optional(),
@@ -199,10 +274,16 @@ function RepairModal({ item, trigger }: { item?: GlassesRepair; trigger?: React.
   );
 }
 
-// ── Main Page ─────────────────────────────────────────────────────────────
+// ── Main Page ──────────────────────────────────────────────────────────────
 export default function GlassesPage() {
   const [activeTab, setActiveTab] = useState<GlassesTab>("FRAMES");
-  const [search, setSearch] = useState("");
+  const [search, setSearch]       = useState("");
+
+  // ── ADDED: One page-state per tab so they are independent ─────────────
+  const [framesPage,      setFramesPage]      = useState(1);
+  const [accessoriesPage, setAccessoriesPage] = useState(1);
+  const [repairsPage,     setRepairsPage]     = useState(1);
+
   const { toast } = useToast();
 
   const { data: glasses,     isLoading: loadingGlasses }  = useGetGlasses({ search: search || undefined }, { enabled: activeTab === "FRAMES" });
@@ -210,8 +291,21 @@ export default function GlassesPage() {
   const { data: repairs,     isLoading: loadingRepairs }   = useGetGlassesRepairs({ enabled: activeTab === "REPAIRS" });
 
   const deleteGlasses = useDeleteGlasses();
-  const deleteAcc = useDeleteGlassesAccessory();
-  const deleteRepair = useDeleteGlassesRepair();
+  const deleteAcc     = useDeleteGlassesAccessory();
+  const deleteRepair  = useDeleteGlassesRepair();
+
+  // ── ADDED: Sort + paginate helpers ────────────────────────────────────
+  const sortedGlasses     = glasses     ? sortByName(glasses)     : [];
+  const sortedAccessories = accessories ? sortByName(accessories) : [];
+  const sortedRepairs     = repairs     ? sortByName(repairs)     : [];
+
+  const glassesPaged     = sortedGlasses.slice((framesPage - 1)      * ITEMS_PER_PAGE, framesPage      * ITEMS_PER_PAGE);
+  const accessoriesPaged = sortedAccessories.slice((accessoriesPage - 1) * ITEMS_PER_PAGE, accessoriesPage * ITEMS_PER_PAGE);
+  const repairsPaged     = sortedRepairs.slice((repairsPage - 1)     * ITEMS_PER_PAGE, repairsPage     * ITEMS_PER_PAGE);
+
+  const totalFramesPages      = Math.ceil(sortedGlasses.length     / ITEMS_PER_PAGE);
+  const totalAccessoriesPages = Math.ceil(sortedAccessories.length / ITEMS_PER_PAGE);
+  const totalRepairsPages     = Math.ceil(sortedRepairs.length     / ITEMS_PER_PAGE);
 
   const tabs: { value: GlassesTab; label: string }[] = [
     { value: "FRAMES",      label: "Frames & Lenses" },
@@ -235,9 +329,23 @@ export default function GlassesPage() {
         <CardHeader className="py-3 px-4 border-b border-border bg-muted/20 space-y-3">
           <div className="flex gap-1.5">
             {tabs.map(t => (
-              <button key={t.value} onClick={() => { setActiveTab(t.value); setSearch(""); }}
-                className={cn("px-3 py-1.5 rounded-md text-xs font-medium border transition-colors",
-                  activeTab === t.value ? "bg-primary text-primary-foreground border-primary" : "bg-background border-border text-muted-foreground hover:bg-muted/50")}>
+              <button
+                key={t.value}
+                onClick={() => {
+                  setActiveTab(t.value);
+                  setSearch("");
+                  // ── ADDED: reset the relevant page on tab switch ──────
+                  setFramesPage(1);
+                  setAccessoriesPage(1);
+                  setRepairsPage(1);
+                }}
+                className={cn(
+                  "px-3 py-1.5 rounded-md text-xs font-medium border transition-colors",
+                  activeTab === t.value
+                    ? "bg-primary text-primary-foreground border-primary"
+                    : "bg-background border-border text-muted-foreground hover:bg-muted/50"
+                )}
+              >
                 {t.label}
               </button>
             ))}
@@ -245,105 +353,298 @@ export default function GlassesPage() {
           {activeTab !== "REPAIRS" && (
             <div className="relative max-w-sm">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input className="pl-9 bg-background" placeholder="Search…" value={search} onChange={e => setSearch(e.target.value)} />
+              <Input
+                className="pl-9 bg-background"
+                placeholder="Search…"
+                value={search}
+                onChange={e => {
+                  setSearch(e.target.value);
+                  // ── ADDED: reset page on new search so we start at page 1
+                  setFramesPage(1);
+                  setAccessoriesPage(1);
+                }}
+              />
             </div>
           )}
         </CardHeader>
 
         <CardContent className="p-0">
+
           {/* ── FRAMES TAB ── */}
           {activeTab === "FRAMES" && (
-            <Table>
-              <TableHeader className="bg-muted/30">
-                <TableRow>
-                  <TableHead className="pl-6">Name</TableHead><TableHead>Brand</TableHead>
-                  <TableHead>Frame / Lens</TableHead><TableHead className="text-right">Price</TableHead>
-                  <TableHead className="text-right">Stock</TableHead><TableHead>Status</TableHead>
-                  <TableHead className="text-right pr-6">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {loadingGlasses ? Array.from({ length: 4 }).map((_, i) => (<TableRow key={i}>{Array.from({length:7}).map((_,j)=>(<TableCell key={j}><Skeleton className="h-5 w-full"/></TableCell>))}</TableRow>))
-                : glasses && glasses.length > 0 ? glasses.map(g => (
-                  <TableRow key={g.id} className="hover:bg-muted/10">
-                    <TableCell className="pl-6 font-medium">{g.name}</TableCell>
-                    <TableCell className="text-muted-foreground">{g.brand ?? "—"}</TableCell>
-                    <TableCell className="text-muted-foreground text-sm">{[g.frameType, g.lensType].filter(Boolean).join(" / ") || "—"}</TableCell>
-                    <TableCell className="text-right font-mono">₦{Number(g.price).toFixed(2)}</TableCell>
-                    <TableCell className="text-right font-mono">{g.quantity}</TableCell>
-                    <TableCell>{g.lowStock ? <Badge variant="destructive">Low Stock</Badge> : <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">In Stock</Badge>}</TableCell>
-                    <TableCell className="text-right pr-6">
-                      <div className="flex justify-end gap-1">
-                        <GlassesFormModal glasses={g} trigger={<Button variant="ghost" size="icon"><Edit className="h-4 w-4 text-muted-foreground"/></Button>} />
-                        <AlertDialog><AlertDialogTrigger asChild><Button variant="ghost" size="icon" className="text-destructive hover:bg-destructive/10"><Trash2 className="h-4 w-4"/></Button></AlertDialogTrigger><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Delete {g.name}?</AlertDialogTitle><AlertDialogDescription>Permanently removes this item.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => deleteGlasses.mutate(g.id, { onSuccess: () => toast({ title: `${g.name} deleted.` }), onError: e => toast({ title: "Error", description: e instanceof ApiError ? e.message : String(e), variant: "destructive" }) })} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Delete</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog>
-                      </div>
-                    </TableCell>
+            <>
+              <Table>
+                <TableHeader className="bg-muted/30">
+                  <TableRow>
+                    <TableHead className="pl-6">Name</TableHead>
+                    <TableHead>Brand</TableHead>
+                    <TableHead>Frame / Lens</TableHead>
+                    <TableHead className="text-right">Price</TableHead>
+                    <TableHead className="text-right">Stock</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right pr-6">Actions</TableHead>
                   </TableRow>
-                )) : <TableRow><TableCell colSpan={7} className="h-24 text-center text-muted-foreground">{search ? `No glasses matching "${search}".` : "No glasses yet."}</TableCell></TableRow>}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {loadingGlasses
+                    ? Array.from({ length: 4 }).map((_, i) => (
+                        <TableRow key={i}>
+                          {Array.from({ length: 7 }).map((_, j) => (
+                            <TableCell key={j}><Skeleton className="h-5 w-full" /></TableCell>
+                          ))}
+                        </TableRow>
+                      ))
+                    // ── CHANGED: iterate glassesPaged (sorted + sliced) instead of glasses ──
+                    : glassesPaged.length > 0
+                      ? glassesPaged.map(g => (
+                          <TableRow key={g.id} className="hover:bg-muted/10">
+                            <TableCell className="pl-6 font-medium">{g.name}</TableCell>
+                            <TableCell className="text-muted-foreground">{g.brand ?? "—"}</TableCell>
+                            <TableCell className="text-muted-foreground text-sm">
+                              {[g.frameType, g.lensType].filter(Boolean).join(" / ") || "—"}
+                            </TableCell>
+                            <TableCell className="text-right font-mono">₦{Number(g.price).toFixed(2)}</TableCell>
+                            <TableCell className="text-right font-mono">{g.quantity}</TableCell>
+                            <TableCell>
+                              {g.lowStock
+                                ? <Badge variant="destructive">Low Stock</Badge>
+                                : <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">In Stock</Badge>}
+                            </TableCell>
+                            <TableCell className="text-right pr-6">
+                              <div className="flex justify-end gap-1">
+                                <GlassesFormModal glasses={g} trigger={<Button variant="ghost" size="icon"><Edit className="h-4 w-4 text-muted-foreground" /></Button>} />
+                                <AlertDialog>
+                                  <AlertDialogTrigger asChild>
+                                    <Button variant="ghost" size="icon" className="text-destructive hover:bg-destructive/10"><Trash2 className="h-4 w-4" /></Button>
+                                  </AlertDialogTrigger>
+                                  <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                      <AlertDialogTitle>Delete {g.name}?</AlertDialogTitle>
+                                      <AlertDialogDescription>Permanently removes this item.</AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                      <AlertDialogAction
+                                        onClick={() => deleteGlasses.mutate(g.id, {
+                                          onSuccess: () => toast({ title: `${g.name} deleted.` }),
+                                          onError: e => toast({ title: "Error", description: e instanceof ApiError ? e.message : String(e), variant: "destructive" }),
+                                        })}
+                                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                      >
+                                        Delete
+                                      </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                  </AlertDialogContent>
+                                </AlertDialog>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      : (
+                          <TableRow>
+                            <TableCell colSpan={7} className="h-24 text-center text-muted-foreground">
+                              {search ? `No glasses matching "${search}".` : "No glasses yet."}
+                            </TableCell>
+                          </TableRow>
+                        )
+                  }
+                </TableBody>
+              </Table>
+
+              {/* ── ADDED: Frames pagination bar ── */}
+              {!loadingGlasses && (
+                <PaginationControls
+                  currentPage={framesPage}
+                  totalPages={totalFramesPages}
+                  onPageChange={setFramesPage}
+                  totalItems={sortedGlasses.length}
+                />
+              )}
+            </>
           )}
 
           {/* ── ACCESSORIES TAB ── */}
           {activeTab === "ACCESSORIES" && (
-            <Table>
-              <TableHeader className="bg-muted/30">
-                <TableRow>
-                  <TableHead className="pl-6">Name</TableHead><TableHead>Type</TableHead>
-                  <TableHead className="text-right">Price</TableHead><TableHead className="text-right">Stock</TableHead>
-                  <TableHead>Status</TableHead><TableHead className="text-right pr-6">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {loadingAcc ? Array.from({ length: 4 }).map((_, i) => (<TableRow key={i}>{Array.from({length:6}).map((_,j)=>(<TableCell key={j}><Skeleton className="h-5 w-full"/></TableCell>))}</TableRow>))
-                : accessories && accessories.length > 0 ? accessories.map(a => (
-                  <TableRow key={a.id} className="hover:bg-muted/10">
-                    <TableCell className="pl-6 font-medium">{a.name}</TableCell>
-                    <TableCell><Badge variant="outline" className={ACCESSORY_COLORS[a.accessoryType] ?? ""}>{ACCESSORY_TYPE_LABELS[a.accessoryType] ?? a.accessoryType}</Badge></TableCell>
-                    <TableCell className="text-right font-mono">₦{Number(a.price).toFixed(2)}</TableCell>
-                    <TableCell className="text-right font-mono">{a.quantity}</TableCell>
-                    <TableCell>{a.lowStock ? <Badge variant="destructive">Low Stock</Badge> : <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">In Stock</Badge>}</TableCell>
-                    <TableCell className="text-right pr-6">
-                      <div className="flex justify-end gap-1">
-                        <AccessoryModal item={a} trigger={<Button variant="ghost" size="icon"><Edit className="h-4 w-4 text-muted-foreground"/></Button>} />
-                        <AlertDialog><AlertDialogTrigger asChild><Button variant="ghost" size="icon" className="text-destructive hover:bg-destructive/10"><Trash2 className="h-4 w-4"/></Button></AlertDialogTrigger><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Delete {a.name}?</AlertDialogTitle><AlertDialogDescription>Permanently removes this accessory.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => deleteAcc.mutate(a.id, { onSuccess: () => toast({ title: `${a.name} deleted.` }), onError: e => toast({ title: "Error", description: e instanceof ApiError ? e.message : String(e), variant: "destructive" }) })} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Delete</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog>
-                      </div>
-                    </TableCell>
+            <>
+              <Table>
+                <TableHeader className="bg-muted/30">
+                  <TableRow>
+                    <TableHead className="pl-6">Name</TableHead>
+                    <TableHead>Type</TableHead>
+                    <TableHead className="text-right">Price</TableHead>
+                    <TableHead className="text-right">Stock</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right pr-6">Actions</TableHead>
                   </TableRow>
-                )) : <TableRow><TableCell colSpan={6} className="h-24 text-center text-muted-foreground">No accessories yet.</TableCell></TableRow>}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {loadingAcc
+                    ? Array.from({ length: 4 }).map((_, i) => (
+                        <TableRow key={i}>
+                          {Array.from({ length: 6 }).map((_, j) => (
+                            <TableCell key={j}><Skeleton className="h-5 w-full" /></TableCell>
+                          ))}
+                        </TableRow>
+                      ))
+                    // ── CHANGED: iterate accessoriesPaged instead of accessories ──
+                    : accessoriesPaged.length > 0
+                      ? accessoriesPaged.map(a => (
+                          <TableRow key={a.id} className="hover:bg-muted/10">
+                            <TableCell className="pl-6 font-medium">{a.name}</TableCell>
+                            <TableCell>
+                              <Badge variant="outline" className={ACCESSORY_COLORS[a.accessoryType] ?? ""}>
+                                {ACCESSORY_TYPE_LABELS[a.accessoryType] ?? a.accessoryType}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-right font-mono">₦{Number(a.price).toFixed(2)}</TableCell>
+                            <TableCell className="text-right font-mono">{a.quantity}</TableCell>
+                            <TableCell>
+                              {a.lowStock
+                                ? <Badge variant="destructive">Low Stock</Badge>
+                                : <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">In Stock</Badge>}
+                            </TableCell>
+                            <TableCell className="text-right pr-6">
+                              <div className="flex justify-end gap-1">
+                                <AccessoryModal item={a} trigger={<Button variant="ghost" size="icon"><Edit className="h-4 w-4 text-muted-foreground" /></Button>} />
+                                <AlertDialog>
+                                  <AlertDialogTrigger asChild>
+                                    <Button variant="ghost" size="icon" className="text-destructive hover:bg-destructive/10"><Trash2 className="h-4 w-4" /></Button>
+                                  </AlertDialogTrigger>
+                                  <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                      <AlertDialogTitle>Delete {a.name}?</AlertDialogTitle>
+                                      <AlertDialogDescription>Permanently removes this accessory.</AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                      <AlertDialogAction
+                                        onClick={() => deleteAcc.mutate(a.id, {
+                                          onSuccess: () => toast({ title: `${a.name} deleted.` }),
+                                          onError: e => toast({ title: "Error", description: e instanceof ApiError ? e.message : String(e), variant: "destructive" }),
+                                        })}
+                                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                      >
+                                        Delete
+                                      </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                  </AlertDialogContent>
+                                </AlertDialog>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      : (
+                          <TableRow>
+                            <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
+                              No accessories yet.
+                            </TableCell>
+                          </TableRow>
+                        )
+                  }
+                </TableBody>
+              </Table>
+
+              {/* ── ADDED: Accessories pagination bar ── */}
+              {!loadingAcc && (
+                <PaginationControls
+                  currentPage={accessoriesPage}
+                  totalPages={totalAccessoriesPages}
+                  onPageChange={setAccessoriesPage}
+                  totalItems={sortedAccessories.length}
+                />
+              )}
+            </>
           )}
 
           {/* ── REPAIRS TAB ── */}
           {activeTab === "REPAIRS" && (
-            <Table>
-              <TableHeader className="bg-muted/30">
-                <TableRow>
-                  <TableHead className="pl-6">Service Name</TableHead><TableHead>Description</TableHead>
-                  <TableHead className="text-right">Price</TableHead><TableHead>Status</TableHead>
-                  <TableHead className="text-right pr-6">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {loadingRepairs ? Array.from({ length: 3 }).map((_, i) => (<TableRow key={i}>{Array.from({length:5}).map((_,j)=>(<TableCell key={j}><Skeleton className="h-5 w-full"/></TableCell>))}</TableRow>))
-                : repairs && repairs.length > 0 ? repairs.map(r => (
-                  <TableRow key={r.id} className="hover:bg-muted/10">
-                    <TableCell className="pl-6 font-medium">{r.name}</TableCell>
-                    <TableCell className="text-muted-foreground text-sm max-w-[200px] truncate">{r.description || "—"}</TableCell>
-                    <TableCell className="text-right font-mono font-semibold">₦{Number(r.price).toFixed(2)}</TableCell>
-                    <TableCell>{r.active ? <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">Active</Badge> : <Badge variant="outline" className="bg-muted text-muted-foreground">Inactive</Badge>}</TableCell>
-                    <TableCell className="text-right pr-6">
-                      <div className="flex justify-end gap-1">
-                        <RepairModal item={r} trigger={<Button variant="ghost" size="icon"><Edit className="h-4 w-4 text-muted-foreground"/></Button>} />
-                        <AlertDialog><AlertDialogTrigger asChild><Button variant="ghost" size="icon" className="text-destructive hover:bg-destructive/10"><Trash2 className="h-4 w-4"/></Button></AlertDialogTrigger><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Deactivate {r.name}?</AlertDialogTitle><AlertDialogDescription>Hides this service from new sales. History preserved.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => deleteRepair.mutate(r.id, { onSuccess: () => toast({ title: `${r.name} deactivated.` }), onError: e => toast({ title: "Error", description: e instanceof ApiError ? e.message : String(e), variant: "destructive" }) })} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Deactivate</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog>
-                      </div>
-                    </TableCell>
+            <>
+              <Table>
+                <TableHeader className="bg-muted/30">
+                  <TableRow>
+                    <TableHead className="pl-6">Service Name</TableHead>
+                    <TableHead>Description</TableHead>
+                    <TableHead className="text-right">Price</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right pr-6">Actions</TableHead>
                   </TableRow>
-                )) : <TableRow><TableCell colSpan={5} className="h-24 text-center text-muted-foreground">No repair services yet.</TableCell></TableRow>}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {loadingRepairs
+                    ? Array.from({ length: 3 }).map((_, i) => (
+                        <TableRow key={i}>
+                          {Array.from({ length: 5 }).map((_, j) => (
+                            <TableCell key={j}><Skeleton className="h-5 w-full" /></TableCell>
+                          ))}
+                        </TableRow>
+                      ))
+                    // ── CHANGED: iterate repairsPaged instead of repairs ──
+                    : repairsPaged.length > 0
+                      ? repairsPaged.map(r => (
+                          <TableRow key={r.id} className="hover:bg-muted/10">
+                            <TableCell className="pl-6 font-medium">{r.name}</TableCell>
+                            <TableCell className="text-muted-foreground text-sm max-w-[200px] truncate">
+                              {r.description || "—"}
+                            </TableCell>
+                            <TableCell className="text-right font-mono font-semibold">₦{Number(r.price).toFixed(2)}</TableCell>
+                            <TableCell>
+                              {r.active
+                                ? <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">Active</Badge>
+                                : <Badge variant="outline" className="bg-muted text-muted-foreground">Inactive</Badge>}
+                            </TableCell>
+                            <TableCell className="text-right pr-6">
+                              <div className="flex justify-end gap-1">
+                                <RepairModal item={r} trigger={<Button variant="ghost" size="icon"><Edit className="h-4 w-4 text-muted-foreground" /></Button>} />
+                                <AlertDialog>
+                                  <AlertDialogTrigger asChild>
+                                    <Button variant="ghost" size="icon" className="text-destructive hover:bg-destructive/10"><Trash2 className="h-4 w-4" /></Button>
+                                  </AlertDialogTrigger>
+                                  <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                      <AlertDialogTitle>Deactivate {r.name}?</AlertDialogTitle>
+                                      <AlertDialogDescription>Hides this service from new sales. History preserved.</AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                      <AlertDialogAction
+                                        onClick={() => deleteRepair.mutate(r.id, {
+                                          onSuccess: () => toast({ title: `${r.name} deactivated.` }),
+                                          onError: e => toast({ title: "Error", description: e instanceof ApiError ? e.message : String(e), variant: "destructive" }),
+                                        })}
+                                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                      >
+                                        Deactivate
+                                      </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                  </AlertDialogContent>
+                                </AlertDialog>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      : (
+                          <TableRow>
+                            <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
+                              No repair services yet.
+                            </TableCell>
+                          </TableRow>
+                        )
+                  }
+                </TableBody>
+              </Table>
+
+              {/* ── ADDED: Repairs pagination bar ── */}
+              {!loadingRepairs && (
+                <PaginationControls
+                  currentPage={repairsPage}
+                  totalPages={totalRepairsPages}
+                  onPageChange={setRepairsPage}
+                  totalItems={sortedRepairs.length}
+                />
+              )}
+            </>
           )}
+
         </CardContent>
       </Card>
     </div>
