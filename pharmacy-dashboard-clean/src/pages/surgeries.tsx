@@ -18,6 +18,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
 import { Plus, Edit, Trash2, Search, Clock } from "lucide-react";
+import { ConsumableUsageWidget } from "@/components/ConsumableUsageWidget";
 
 const schema = z.object({
   name:            z.string().min(1, "Name is required"),

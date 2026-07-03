@@ -16,6 +16,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
 import { Plus, Edit, Trash2 } from "lucide-react";
+import { ConsumableUsageWidget } from "@/components/ConsumableUsageWidget";
 
 const LAB_CATEGORIES = [
   { value: "RVS",    label: "Retroviral Screening",  color: "bg-rose-50 text-rose-700 border-rose-200" },

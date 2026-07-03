@@ -14,7 +14,9 @@ import type {
   UserProfile, UserInput,
   GlassesAccessory, GlassesAccessoryInput,
   GlassesRepair, GlassesRepairInput,
-  BatchCheckResult,
+  BatchCheckResult,Consumable,
+  ConsumableInput, ConsumableUsageInput,
+  ConsumableUsageRecord,
 } from "@/types/api";
 
 // ── Query key factories ──────────────────────────────────────────────────────
@@ -217,4 +219,61 @@ export function useUpdateGlassesRepair() {
 export function useDeleteGlassesRepair() {
   const qc = useQueryClient();
   return useMutation({ mutationFn: (id: number) => apiRequest<void>(`/api/glasses-repairs/${id}`, { method: "DELETE" }), onSuccess: () => qc.invalidateQueries({ queryKey: ["glasses-repairs"] }) });
+}
+
+// ── Consumables ──────────────────────────────────────────────────────────────
+
+export function useGetConsumables(
+  params?: { search?: string },
+  options?: Omit<UseQueryOptions<Consumable[]>, "queryKey" | "queryFn">,
+) {
+  const q = params?.search ? `?search=${encodeURIComponent(params.search)}` : "";
+  return useQuery<Consumable[]>({
+    queryKey: ["consumables", params ?? {}],
+    queryFn: () => apiRequest<Consumable[]>(`/api/consumables${q}`),
+    ...options,
+  });
+}
+
+export function useCreateConsumable() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (d: ConsumableInput) =>
+      apiRequest<Consumable>("/api/consumables", { method: "POST", body: d }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["consumables"] }),
+  });
+}
+
+export function useUpdateConsumable() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: number; data: ConsumableInput }) =>
+      apiRequest<Consumable>(`/api/consumables/${id}`, { method: "PUT", body: data }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["consumables"] }),
+  });
+}
+
+export function useDeleteConsumable() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) =>
+      apiRequest<void>(`/api/consumables/${id}`, { method: "DELETE" }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["consumables"] }),
+  });
+}
+
+export function useRecordConsumableUsage() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (d: ConsumableUsageInput) =>
+      apiRequest<ConsumableUsageRecord>("/api/consumables/usage", { method: "POST", body: d }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["consumables"] }),
+  });
+}
+
+export function useGetConsumableUsage() {
+  return useQuery<ConsumableUsageRecord[]>({
+    queryKey: ["consumables", "usage"],
+    queryFn: () => apiRequest<ConsumableUsageRecord[]>("/api/consumables/usage"),
+  });
 }

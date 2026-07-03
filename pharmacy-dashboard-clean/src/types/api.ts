@@ -213,3 +213,52 @@ export interface GlassesRepairInput {
   price: number;
   active?: boolean;
 }
+
+// ── Consumables ──────────────────────────────────────────────────────────────
+
+export interface Consumable {
+  id: number;
+  name: string;
+  description?: string;
+  unit: string;
+  quantityInStock: number;
+  reorderLevel: number;
+  lowStock: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ConsumableInput {
+  name: string;
+  description?: string;
+  unit: string;
+  quantityInStock: number;
+  reorderLevel?: number;
+}
+
+export interface ConsumableUsageInput {
+  consumableId: number;
+  quantityUsed: number;
+  usedBy?: string;
+  notes?: string;
+  linkedEntityType?: "SURGERY" | "PROCEDURE" | "LAB_TEST";
+  surgeryId?: number;
+  procedureRef?: string;
+  labTestRef?: string;
+}
+
+export interface ConsumableUsageRecord {
+  id: number;
+  consumableId: number;
+  consumableName: string;
+  unit: string;
+  quantityUsed: number;
+  usedBy?: string;
+  notes?: string;
+  usedAt: string;
+  linkedEntityType?: string;
+  surgeryId?: number;
+  surgeryName?: string;
+  procedureRef?: string;
+  labTestRef?: string;
+}

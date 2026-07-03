@@ -3,7 +3,7 @@ import { Link, useLocation } from "wouter";
 import {
   Activity, LayoutDashboard, Pill, Glasses, Stethoscope,
   Calendar, FileText, FlaskConical, Receipt, PlusCircle,
-  Users, LogOut, User, Menu, X, Sun, Moon,
+  Users, LogOut, User, Menu, X, Sun, Moon,Package,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
@@ -19,14 +19,15 @@ const NAV_GROUPS = [
       { name: "Dashboard", href: "/",             icon: LayoutDashboard },
     ],
   },
-  {
-    label: "Inventory",
-    items: [
-      { name: "Medicines", href: "/medicines",    icon: Pill },
-      { name: "Glasses",   href: "/glasses",      icon: Glasses },
-      { name: "Surgeries", href: "/surgeries",    icon: Stethoscope },
-    ],
-  },
+ {
+  label: "Inventory",
+  items: [
+    { name: "Medicines",    href: "/medicines",    icon: Pill },
+    { name: "Glasses",      href: "/glasses",      icon: Glasses },
+    { name: "Surgeries",    href: "/surgeries",    icon: Stethoscope },
+    { name: "Consumables",  href: "/consumables",  icon: Package },
+  ],
+},
   {
     label: "Clinical",
     items: [

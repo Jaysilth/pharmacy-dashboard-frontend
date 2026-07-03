@@ -6,6 +6,7 @@ import { ThemeProvider } from "@/context/ThemeContext";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
 import { ClinicalProvider } from "@/context/ClinicalContext";
 
+
 import Layout from "@/components/layout";
 import Login from "@/pages/login";
 import Dashboard from "@/pages/dashboard";
@@ -21,6 +22,7 @@ import NewSale from "@/pages/new-sale";
 import SaleDetail from "@/pages/sale-detail";
 import UsersPage from "@/pages/users";
 import NotFound from "@/pages/not-found";
+import ConsumablesPage from "@/pages/consumables";
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1, staleTime: 30_000 } },
@@ -37,6 +39,7 @@ function ProtectedRoutes() {
         <Route path="/medicines/:id"  component={MedicineDetail} />
         <Route path="/glasses"        component={GlassesPage} />
         <Route path="/surgeries"      component={SurgeriesPage} />
+        <Route path="/consumables" component={ConsumablesPage} />
         <Route path="/clinic-visits"  component={ClinicVisitsPage} />
         <Route path="/procedures"     component={ProceduresPage} />
         <Route path="/lab-tests"      component={LabTestsPage} />
