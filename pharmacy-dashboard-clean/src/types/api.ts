@@ -176,7 +176,7 @@ export interface UserInput {
 export interface GlassesAccessory {
   id: number;
   name: string;
-  accessoryType: "ROPE_THIN" | "ROPE_FAT" | "CASE_PLASTIC" | "CASE_WOODEN";
+  accessoryType: "ROPE_THIN" | "ROPE_FAT" | "CASE_PLASTIC" | "CASE_WOODEN" | "CASE_PURSE" | "OTHER";
   price: number;
   quantity: number;
   lowStockThreshold: number;

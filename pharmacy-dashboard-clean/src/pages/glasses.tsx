@@ -32,12 +32,16 @@ const ACCESSORY_TYPE_LABELS: Record<string, string> = {
   ROPE_FAT:     "Rope — Fat",
   CASE_PLASTIC: "Case — Plastic",
   CASE_WOODEN:  "Case — Wooden",
+  CASE_PURSE:   "Case — Purse",
+  OTHER:        "Other",
 };
 const ACCESSORY_COLORS: Record<string, string> = {
   ROPE_THIN:    "bg-sky-50 text-sky-700 border-sky-200",
   ROPE_FAT:     "bg-blue-50 text-blue-700 border-blue-200",
   CASE_PLASTIC: "bg-amber-50 text-amber-700 border-amber-200",
   CASE_WOODEN:  "bg-orange-50 text-orange-700 border-orange-200",
+  CASE_PURSE:   "bg-purple-50 text-purple-700 border-purple-200",
+  OTHER:        "bg-zinc-100 text-zinc-800 border-zinc-200",
 };
 
 // ── Glasses Frame/Lens Modal (unchanged logic) ─────────────────────────────
