@@ -277,3 +277,12 @@ export function useGetConsumableUsage() {
     queryFn: () => apiRequest<ConsumableUsageRecord[]>("/api/consumables/usage"),
   });
 }
+
+export function useDeleteConsumableUsage() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (usageId: number) =>
+      apiRequest<void>(`/api/consumables/usage/${usageId}`, { method: "DELETE" }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["consumables"] }),
+  });
+}

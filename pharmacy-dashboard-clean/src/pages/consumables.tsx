@@ -9,7 +9,9 @@ import {
   useUpdateConsumable,
   useDeleteConsumable,
   useGetConsumableUsage,
+  useDeleteConsumableUsage,
 } from "@/lib/queries";
+import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { ApiError } from "@/lib/api-client";
 import type { Consumable, ConsumableInput } from "@/types/api";
@@ -172,6 +174,7 @@ export default function ConsumablesPage() {
   const [activeTab, setActiveTab] = useState<PageTab>("STOCK");
   const [search, setSearch] = useState("");
   const { toast } = useToast();
+  const { isSuperAdmin } = useAuth();
 
   const { data: consumables, isLoading } = useGetConsumables(
     { search: search || undefined },
@@ -179,7 +182,7 @@ export default function ConsumablesPage() {
   );
   const { data: usageLog, isLoading: loadingLog } = useGetConsumableUsage();
   const deleteConsumable = useDeleteConsumable();
-
+  const deleteUsage = useDeleteConsumableUsage();
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -189,7 +192,7 @@ export default function ConsumablesPage() {
             Internal medical supplies — tracked by usage, not sold.
           </p>
         </div>
-        {activeTab === "STOCK" && <ConsumableModal />}
+        {activeTab === "STOCK" && isSuperAdmin && <ConsumableModal />}
       </div>
 
       {/* Tabs */}
@@ -278,54 +281,58 @@ export default function ConsumablesPage() {
                         )}
                       </TableCell>
                       <TableCell className="text-right pr-6">
-                        <div className="flex justify-end gap-1">
-                          <ConsumableModal
-                            item={c}
-                            trigger={
-                              <Button variant="ghost" size="icon">
-                                <Edit className="h-4 w-4 text-muted-foreground" />
-                              </Button>
-                            }
-                          />
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="text-destructive hover:bg-destructive/10"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>Delete {c.name}?</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  This removes the consumable and its usage history. Cannot be undone.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction
-                                  onClick={() =>
-                                    deleteConsumable.mutate(c.id, {
-                                      onSuccess: () => toast({ title: `${c.name} deleted.` }),
-                                      onError: e =>
-                                        toast({
-                                          title: "Delete failed",
-                                          description: e instanceof ApiError ? e.message : String(e),
-                                          variant: "destructive",
-                                        }),
-                                    })
-                                  }
-                                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        {isSuperAdmin ? (
+                          <div className="flex justify-end gap-1">
+                            <ConsumableModal
+                              item={c}
+                              trigger={
+                                <Button variant="ghost" size="icon">
+                                  <Edit className="h-4 w-4 text-muted-foreground" />
+                                </Button>
+                              }
+                            />
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="text-destructive hover:bg-destructive/10"
                                 >
-                                  Delete
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                        </div>
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Delete {c.name}?</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    This removes the consumable and its usage history. Cannot be undone.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                  <AlertDialogAction
+                                    onClick={() =>
+                                      deleteConsumable.mutate(c.id, {
+                                        onSuccess: () => toast({ title: `${c.name} deleted.` }),
+                                        onError: e =>
+                                          toast({
+                                            title: "Delete failed",
+                                            description: e instanceof ApiError ? e.message : String(e),
+                                            variant: "destructive",
+                                          }),
+                                      })
+                                    }
+                                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                  >
+                                    Delete
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          </div>
+                        ) : (
+                          <span className="text-muted-foreground text-sm">—</span>
+                        )}
                       </TableCell>
                     </TableRow>
                   ))
@@ -351,13 +358,14 @@ export default function ConsumablesPage() {
                   <TableHead>Linked To</TableHead>
                   <TableHead>Notes</TableHead>
                   <TableHead className="pr-6">Date</TableHead>
+                  <TableHead className="text-right pr-6">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {loadingLog ? (
                   Array.from({ length: 5 }).map((_, i) => (
                     <TableRow key={i}>
-                      {Array.from({ length: 6 }).map((__, j) => (
+                      {Array.from({ length: 7 }).map((__, j) => (
                         <TableCell key={j}><Skeleton className="h-5 w-full" /></TableCell>
                       ))}
                     </TableRow>
@@ -398,11 +406,56 @@ export default function ConsumablesPage() {
                       <TableCell className="pr-6 text-sm text-muted-foreground">
                         {format(new Date(u.usedAt), "dd MMM yyyy, HH:mm")}
                       </TableCell>
+                      <TableCell className="text-right pr-6">
+                        {isSuperAdmin ? (
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="text-destructive hover:bg-destructive/10"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Delete this usage entry?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  {u.quantityUsed} {u.unit} of {u.consumableName} will be added back to stock,
+                                  and this log entry will be permanently removed.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() =>
+                                    deleteUsage.mutate(u.id, {
+                                      onSuccess: () => toast({ title: "Usage entry deleted, stock restored." }),
+                                      onError: e =>
+                                        toast({
+                                          title: "Delete failed",
+                                          description: e instanceof ApiError ? e.message : String(e),
+                                          variant: "destructive",
+                                        }),
+                                    })
+                                  }
+                                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                >
+                                  Delete
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        ) : (
+                          <span className="text-muted-foreground text-sm">—</span>
+                        )}
+                      </TableCell>
                     </TableRow>
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={6} className="h-32 text-center text-muted-foreground">
+                    <TableCell colSpan={7} className="h-32 text-center text-muted-foreground">
                       No usage recorded yet.
                     </TableCell>
                   </TableRow>
