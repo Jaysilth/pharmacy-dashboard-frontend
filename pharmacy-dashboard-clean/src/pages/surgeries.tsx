@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, Fragment } from "react";
 import { useGetSurgeries, useCreateSurgery, useUpdateSurgery, useDeleteSurgery } from "@/lib/queries";
 import { useToast } from "@/hooks/use-toast";
 import { ApiError } from "@/lib/api-client";
@@ -17,7 +17,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Edit, Trash2, Search, Clock } from "lucide-react";
+import { Plus, Edit, Trash2, Search, Clock, ChevronDown, ChevronRight, Package } from "lucide-react";
 import { ConsumableUsageWidget } from "@/components/ConsumableUsageWidget";
 
 const schema = z.object({
@@ -94,6 +94,7 @@ export default function SurgeriesPage() {
   const { toast } = useToast();
   const { data: surgeries, isLoading } = useGetSurgeries({ search: search || undefined });
   const deleteSurgery = useDeleteSurgery();
+  const [expandedId, setExpandedId] = useState<number | null>(null);
 
   const handleDelete = (s: Surgery) => {
     deleteSurgery.mutate(s.id, {
@@ -137,7 +138,8 @@ export default function SurgeriesPage() {
                   {Array.from({ length: 6 }).map((__, j) => (<TableCell key={j}><Skeleton className="h-5 w-full" /></TableCell>))}
                 </TableRow>
               )) : surgeries && surgeries.length > 0 ? surgeries.map(s => (
-                <TableRow key={s.id} className="hover:bg-muted/10">
+                <Fragment key={s.id}>
+                <TableRow className="hover:bg-muted/10">
                   <TableCell className="pl-6">
                     <p className="font-medium">{s.name}</p>
                     {s.description && <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{s.description}</p>}
@@ -154,8 +156,18 @@ export default function SurgeriesPage() {
                       ? <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">Active</Badge>
                       : <Badge variant="outline" className="bg-muted text-muted-foreground">Inactive</Badge>}
                   </TableCell>
-                  <TableCell className="text-right pr-6">
+                 <TableCell className="text-right pr-6">
                     <div className="flex justify-end gap-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        title="Record consumable usage"
+                        onClick={() => setExpandedId(expandedId === s.id ? null : s.id)}
+                      >
+                        {expandedId === s.id
+                          ? <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                          : <ChevronRight className="h-4 w-4 text-muted-foreground" />}
+                      </Button>
                       <SurgeryFormModal surgery={s} trigger={<Button variant="ghost" size="icon"><Edit className="h-4 w-4 text-muted-foreground" /></Button>} />
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
@@ -175,6 +187,19 @@ export default function SurgeriesPage() {
                     </div>
                   </TableCell>
                 </TableRow>
+                {expandedId === s.id && (
+                  <TableRow className="bg-muted/10 hover:bg-muted/10">
+                    <TableCell colSpan={6} className="px-6 py-4">
+                      <div className="max-w-md">
+                        <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground flex items-center gap-1.5 mb-2">
+                          <Package className="h-3.5 w-3.5" /> Record Consumable Usage — {s.name}
+                        </p>
+                        <ConsumableUsageWidget linkedEntityType="SURGERY" surgeryId={s.id} compact />
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                )}
+                </Fragment>
               )) : (
                 <TableRow><TableCell colSpan={6} className="h-32 text-center text-muted-foreground">{search ? `No surgeries matching "${search}".` : "No surgery services yet."}</TableCell></TableRow>
               )}

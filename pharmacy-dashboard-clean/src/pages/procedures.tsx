@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, Fragment } from "react";
 import { useClinical, type ClinicalItem } from "@/context/ClinicalContext";
 import { useToast } from "@/hooks/use-toast";
 import { useForm } from "react-hook-form";
@@ -15,7 +15,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Edit, Trash2 } from "lucide-react";
+import { Plus, Edit, Trash2, ChevronDown, ChevronRight, Package } from "lucide-react";
 import { ConsumableUsageWidget } from "@/components/ConsumableUsageWidget";
 
 const PROC_CATEGORIES = [
@@ -106,7 +106,7 @@ export default function ProceduresPage() {
   const { procedures, removeItem } = useClinical();
   const { toast } = useToast();
   const catInfo = (cat: string) => PROC_CATEGORIES.find(c => c.value === cat) ?? { label: cat, color: "bg-gray-50 text-gray-600 border-gray-200" };
-
+  const [expandedId, setExpandedId] = useState<string | null>(null);
   return (
     <div className="space-y-6 max-w-5xl mx-auto">
       <div className="flex justify-between items-start">
@@ -131,8 +131,9 @@ export default function ProceduresPage() {
             <TableBody>
               {procedures.length === 0 ? (
                 <TableRow><TableCell colSpan={5} className="h-24 text-center text-muted-foreground">No procedures yet.</TableCell></TableRow>
-              ) : procedures.map(p => (
-                <TableRow key={p.id} className="hover:bg-muted/10">
+            ) : procedures.map(p => (
+                <Fragment key={p.id}>
+                <TableRow className="hover:bg-muted/10">
                   <TableCell className="pl-6 font-medium">{p.name}</TableCell>
                   <TableCell>
                     <Badge variant="outline" className={catInfo(p.category).color}>
@@ -143,6 +144,16 @@ export default function ProceduresPage() {
                   <TableCell className="text-right font-mono font-semibold">₦{p.price.toLocaleString()}.00</TableCell>
                   <TableCell className="text-right pr-6">
                     <div className="flex justify-end gap-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        title="Record consumable usage"
+                        onClick={() => setExpandedId(expandedId === p.id ? null : p.id)}
+                      >
+                        {expandedId === p.id
+                          ? <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                          : <ChevronRight className="h-4 w-4 text-muted-foreground" />}
+                      </Button>
                       <ProcedureModal item={p} />
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
@@ -162,6 +173,19 @@ export default function ProceduresPage() {
                     </div>
                   </TableCell>
                 </TableRow>
+                {expandedId === p.id && (
+                  <TableRow className="bg-muted/10 hover:bg-muted/10">
+                    <TableCell colSpan={5} className="px-6 py-4">
+                      <div className="max-w-md">
+                        <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground flex items-center gap-1.5 mb-2">
+                          <Package className="h-3.5 w-3.5" /> Record Consumable Usage — {p.name}
+                        </p>
+                        <ConsumableUsageWidget linkedEntityType="PROCEDURE" entityRef={p.name} compact />
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                )}
+                </Fragment>
               ))}
             </TableBody>
           </Table>
