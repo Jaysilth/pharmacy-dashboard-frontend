@@ -4,4 +4,3 @@ dist
 .env.local
 *.local
 .tsbuildinfo
-.claude/settings.local.json
