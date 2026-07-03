@@ -108,6 +108,10 @@ export interface Sale {
   paymentMethod?: string;
   notes?: string;
   grandTotal?: number;
+  // Discount fields (populated when backend supports them)
+  discountType?: "FIXED" | "PERCENT";
+  discountValue?: number;
+  discountAmount?: number;
   items: SaleItemResponse[];
   createdAt: string;
   // legacy
@@ -130,6 +134,10 @@ export interface SaleInput {
   customerPhone: string;
   paymentMethod: string;
   notes?: string;
+  // Discount fields — frontend always sends these; backend can ignore until ready
+  discountType?: "FIXED" | "PERCENT";
+  discountValue?: number;
+  discountAmount?: number;
   items: { itemType: string; itemId: number; quantity: number }[];
 }
 

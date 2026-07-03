@@ -16,7 +16,7 @@ import {
   Table, TableBody, TableCell, TableHead,
   TableHeader, TableRow,
 } from "@/components/ui/table";
-import { ArrowLeft, Trash2, User, CreditCard, FileText, Calendar } from "lucide-react";
+import { ArrowLeft, Trash2, User, CreditCard, FileText, Calendar, Tag } from "lucide-react";
 import { format } from "date-fns";
 import type { Sale } from "@/types/api";
 
@@ -242,13 +242,42 @@ export default function SaleDetail() {
             </TableBody>
           </Table>
 
-          {/* Grand total row */}
-          <div className="flex justify-end items-center gap-6 px-6 py-4 border-t border-border bg-muted/20">
-            <span className="text-sm font-medium text-muted-foreground">Grand Total</span>
-            <span className="text-xl font-bold font-mono text-foreground">
-              ₦{total.toFixed(2)}
-            </span>
-          </div>
+          {/* Grand total row — with optional discount breakdown */}
+          {sale.discountAmount != null && sale.discountAmount > 0 ? (
+            <div className="px-6 py-4 border-t border-border bg-muted/20 space-y-2">
+              <div className="flex justify-end items-center gap-6">
+                <span className="text-xs text-muted-foreground">Subtotal</span>
+                <span className="text-sm font-mono text-muted-foreground">
+                  ₦{(total + sale.discountAmount).toFixed(2)}
+                </span>
+              </div>
+              <div className="flex justify-end items-center gap-6">
+                <span className="text-xs text-destructive flex items-center gap-1">
+                  <Tag className="h-3 w-3" />
+                  Discount
+                  {sale.discountType === "PERCENT" && sale.discountValue != null && (
+                    <span className="text-[10px] opacity-70">({sale.discountValue}%)</span>
+                  )}
+                </span>
+                <span className="text-sm font-mono font-semibold text-destructive">
+                  −₦{sale.discountAmount.toFixed(2)}
+                </span>
+              </div>
+              <div className="border-t border-dashed border-border pt-2 flex justify-end items-center gap-6">
+                <span className="text-sm font-medium text-foreground">Final Total</span>
+                <span className="text-xl font-bold font-mono text-primary">
+                  ₦{total.toFixed(2)}
+                </span>
+              </div>
+            </div>
+          ) : (
+            <div className="flex justify-end items-center gap-6 px-6 py-4 border-t border-border bg-muted/20">
+              <span className="text-sm font-medium text-muted-foreground">Grand Total</span>
+              <span className="text-xl font-bold font-mono text-foreground">
+                ₦{total.toFixed(2)}
+              </span>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

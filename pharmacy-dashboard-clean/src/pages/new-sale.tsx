@@ -14,7 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import {
   Search, Plus, Minus, Trash2, ShoppingCart, User, CreditCard,
   Pill, Glasses, Package, Wrench, Stethoscope,
-  Calendar, FileText, FlaskConical,
+  Calendar, FileText, FlaskConical, Tag, Percent, ChevronDown,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -77,6 +77,11 @@ export default function NewSale() {
   const [paymentMethod, setPM]  = useState<PaymentMethod>("CASH");
   const [notes, setNotes]       = useState("");
 
+  // ── Discount state ──
+  const [discountEnabled, setDiscountEnabled] = useState(false);
+  const [discountMode, setDiscountMode]       = useState<"FIXED" | "PERCENT">("FIXED");
+  const [discountInput, setDiscountInput]     = useState("");
+
   const isInventory = ["MEDICINE", "GLASSES", "GLASSES_ACCESSORY"].includes(tab);
   const isService   = ["GLASSES_REPAIR", "SURGERY"].includes(tab);
   const isClinical  = ["CLINIC_VISIT", "PROCEDURE", "LAB_TEST"].includes(tab);
@@ -132,7 +137,14 @@ export default function NewSale() {
     else setCart(cart.map((c, i) => i === idx ? { ...c, quantity: next } : c));
   };
 
-  const grandTotal = cart.reduce((sum, c) => sum + c.unitPrice * c.quantity, 0);
+  // ── Discount calculations ──
+  const subtotal = cart.reduce((sum, c) => sum + c.unitPrice * c.quantity, 0);
+  const parsedDiscount = parseFloat(discountInput) || 0;
+  const discountAmount = !discountEnabled || parsedDiscount <= 0 ? 0
+    : discountMode === "PERCENT"
+      ? Math.min(subtotal, Math.round((subtotal * Math.min(parsedDiscount, 100)) / 100))
+      : Math.min(subtotal, parsedDiscount);
+  const finalTotal = Math.max(0, subtotal - discountAmount);
 
   const handleSubmit = () => {
     if (!customerName.trim()) { toast({ title: "Customer name is required.", variant: "destructive" }); return; }
@@ -144,6 +156,12 @@ export default function NewSale() {
       customerPhone: customerPhone.trim(),
       paymentMethod,
       notes: notes.trim() || undefined,
+      // Include discount metadata for when backend supports it
+      ...(discountEnabled && discountAmount > 0 ? {
+        discountType:   discountMode,
+        discountValue:  parsedDiscount,
+        discountAmount: discountAmount,
+      } : {}),
       items: cart.map(c => ({
         itemType:  c.itemType,
         itemId:    c.isClinical ? undefined as unknown as number : c.itemId,
@@ -326,10 +344,133 @@ export default function NewSale() {
                 </div>
               )}
               <div className="border-t border-border px-4 py-4 space-y-3">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm font-medium text-muted-foreground">Grand Total</span>
-                  <span className="text-xl font-bold font-mono">₦{grandTotal.toLocaleString()}.00</span>
-                </div>
+
+                {/* ── Discount toggle ── */}
+                {cart.length > 0 && (
+                  <div className="space-y-2">
+                    <button
+                      id="discount-toggle"
+                      onClick={() => {
+                        const next = !discountEnabled;
+                        setDiscountEnabled(next);
+                        if (!next) { setDiscountInput(""); }
+                      }}
+                      className={cn(
+                        "flex items-center gap-2 w-full px-3 py-2 rounded-lg text-xs font-medium border transition-all duration-200",
+                        discountEnabled
+                          ? "bg-emerald-50 border-emerald-300 text-emerald-700 dark:bg-emerald-950/30 dark:border-emerald-700 dark:text-emerald-400"
+                          : "bg-muted/30 border-border text-muted-foreground hover:bg-muted/60 hover:border-border/80"
+                      )}
+                    >
+                      <Tag className="h-3.5 w-3.5" />
+                      {discountEnabled ? "Discount Applied" : "Apply Discount"}
+                      <ChevronDown className={cn("h-3.5 w-3.5 ml-auto transition-transform duration-200", discountEnabled && "rotate-180")} />
+                    </button>
+
+                    {/* ── Discount panel (collapsible) ── */}
+                    <div
+                      className={cn(
+                        "overflow-hidden transition-all duration-300 ease-in-out",
+                        discountEnabled ? "max-h-[200px] opacity-100" : "max-h-0 opacity-0"
+                      )}
+                    >
+                      <div className="space-y-2 pt-1 pb-1">
+                        {/* Mode toggle pills */}
+                        <div className="flex gap-1.5">
+                          <button
+                            id="discount-mode-fixed"
+                            onClick={() => { setDiscountMode("FIXED"); setDiscountInput(""); }}
+                            className={cn(
+                              "flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-semibold border transition-colors",
+                              discountMode === "FIXED"
+                                ? "bg-primary text-primary-foreground border-primary"
+                                : "border-border text-muted-foreground hover:bg-muted/50"
+                            )}
+                          >
+                            ₦ Fixed
+                          </button>
+                          <button
+                            id="discount-mode-percent"
+                            onClick={() => { setDiscountMode("PERCENT"); setDiscountInput(""); }}
+                            className={cn(
+                              "flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-semibold border transition-colors",
+                              discountMode === "PERCENT"
+                                ? "bg-primary text-primary-foreground border-primary"
+                                : "border-border text-muted-foreground hover:bg-muted/50"
+                            )}
+                          >
+                            <Percent className="h-3 w-3" /> Percent
+                          </button>
+                        </div>
+
+                        {/* Discount input */}
+                        <div className="relative">
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-muted-foreground">
+                            {discountMode === "FIXED" ? "₦" : "%"}
+                          </span>
+                          <Input
+                            id="discount-value-input"
+                            type="number"
+                            min="0"
+                            max={discountMode === "PERCENT" ? "100" : String(subtotal)}
+                            step={discountMode === "PERCENT" ? "0.5" : "1"}
+                            placeholder={discountMode === "FIXED" ? "Enter amount…" : "Enter percentage…"}
+                            className="pl-7 h-8 text-sm"
+                            value={discountInput}
+                            onChange={e => {
+                              const val = e.target.value;
+                              // Prevent negatives
+                              if (val && parseFloat(val) < 0) return;
+                              // Prevent percent > 100
+                              if (discountMode === "PERCENT" && parseFloat(val) > 100) return;
+                              setDiscountInput(val);
+                            }}
+                          />
+                        </div>
+
+                        {/* Live discount preview */}
+                        {discountAmount > 0 && (
+                          <div className="flex items-center justify-between px-1">
+                            <span className="text-[11px] text-muted-foreground">
+                              {discountMode === "PERCENT" ? `${parsedDiscount}% off` : "Flat discount"}
+                            </span>
+                            <span className="text-xs font-mono font-semibold text-destructive">
+                              −₦{discountAmount.toLocaleString()}.00
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* ── Totals breakdown ── */}
+                {discountEnabled && discountAmount > 0 ? (
+                  <div className="space-y-1.5">
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs text-muted-foreground">Subtotal</span>
+                      <span className="text-sm font-mono text-muted-foreground">₦{subtotal.toLocaleString()}.00</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs text-destructive flex items-center gap-1">
+                        <Tag className="h-3 w-3" />
+                        Discount
+                        {discountMode === "PERCENT" && <span className="text-[10px] opacity-70">({parsedDiscount}%)</span>}
+                      </span>
+                      <span className="text-sm font-mono font-semibold text-destructive">−₦{discountAmount.toLocaleString()}.00</span>
+                    </div>
+                    <div className="border-t border-dashed border-border pt-1.5 flex justify-between items-center">
+                      <span className="text-sm font-medium text-foreground">Final Total</span>
+                      <span className="text-xl font-bold font-mono text-primary">₦{finalTotal.toLocaleString()}.00</span>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm font-medium text-muted-foreground">Grand Total</span>
+                    <span className="text-xl font-bold font-mono">₦{subtotal.toLocaleString()}.00</span>
+                  </div>
+                )}
+
                 <div className="flex gap-2">
                   <Button variant="outline" className="flex-1" onClick={() => setLocation("/sales")}>Cancel</Button>
                   <Button className="flex-1" disabled={createSale.isPending || cart.length === 0} onClick={handleSubmit}>
