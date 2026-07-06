@@ -192,7 +192,7 @@ export default function ConsumablesPage() {
             Internal medical supplies — tracked by usage, not sold.
           </p>
         </div>
-        {activeTab === "STOCK" && isSuperAdmin && <ConsumableModal />}
+        {activeTab === "STOCK" && <ConsumableModal />}
       </div>
 
       {/* Tabs */}
@@ -281,16 +281,16 @@ export default function ConsumablesPage() {
                         )}
                       </TableCell>
                       <TableCell className="text-right pr-6">
-                        {isSuperAdmin ? (
+                        
                           <div className="flex justify-end gap-1">
                             <ConsumableModal
-                              item={c}
-                              trigger={
-                                <Button variant="ghost" size="icon">
-                                  <Edit className="h-4 w-4 text-muted-foreground" />
-                                </Button>
-                              }
-                            />
+                           item={c}
+                          trigger={
+                            <Button variant="ghost" size="icon">
+                              <Edit className="h-4 w-4 text-muted-foreground" />
+                            </Button>
+                          }
+                           />
                             <AlertDialog>
                               <AlertDialogTrigger asChild>
                                 <Button
@@ -332,7 +332,7 @@ export default function ConsumablesPage() {
                           </div>
                         ) : (
                           <span className="text-muted-foreground text-sm">—</span>
-                        )}
+                        )
                       </TableCell>
                     </TableRow>
                   ))
