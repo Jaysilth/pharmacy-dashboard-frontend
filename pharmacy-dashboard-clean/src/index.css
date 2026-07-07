@@ -314,7 +314,7 @@
 /* Main glass container */
 
 .glass {
-  background: rgba(255,255,255,.08);
+  background: rgba(255,255,255,.72);
   backdrop-filter: blur(28px) saturate(180%);
   -webkit-backdrop-filter: blur(28px) saturate(180%);
   border: 1px solid rgba(255,255,255,.18);
@@ -350,7 +350,7 @@
 
 .dark .glass{
 
-    background:var(--glass-bg-dark);
+    background: rgba(17,24,39,.55);
 
 }
 
@@ -368,10 +368,44 @@
 
 }
 
-.glass-nav.active{
+.glass-nav.active {
+    background: rgba(255,255,255,.18);
+    transition: all .25s ease;
+}
 
-    background:var(--glass-active);
+/* ---------- LIGHT MODE ---------- */
 
+:root .glass-nav.active{
+    color: hsl(var(--primary));
+
+    background: rgba(47,128,237,.10);
+
+    border:1px solid rgba(47,128,237,.15);
+
+    box-shadow:
+        0 4px 16px rgba(47,128,237,.12);
+}
+
+:root .glass-nav.active svg{
+    color:hsl(var(--primary));
+}
+
+/* ---------- DARK MODE ---------- */
+
+.dark .glass-nav.active{
+
+    color:white;
+
+    background:rgba(255,255,255,.14);
+
+    border:1px solid rgba(255,255,255,.10);
+
+    box-shadow:
+        0 0 16px rgba(96,165,250,.18);
+}
+
+.dark .glass-nav.active svg{
+    color:white;
 }
 
 /* Login */

@@ -73,7 +73,7 @@ function NavLink({
   "transition-all duration-300",
   "select-none",
   isActive
-    ? "active text-white"
+    ? "active"
     : "text-sidebar-foreground/70 hover:text-sidebar-foreground"
 )}
     >
