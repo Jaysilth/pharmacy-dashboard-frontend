@@ -247,7 +247,7 @@ duration-300
   "
 > 
 
-        {/* Blueprint grid overlay (decorative) */}
+        {/* Blueprint grid overlay (decorative)
         <div
           className="pointer-events-none absolute inset-0 opacity-[0.03]"
           style={{
@@ -255,7 +255,7 @@ duration-300
               "linear-gradient(to right, currentColor 1px, transparent 1px), linear-gradient(to bottom, currentColor 1px, transparent 1px)",
             backgroundSize: "20px 20px",
           }}
-        />
+        /> */}
 
         {/* Logo */}
         <div className="relative flex items-center gap-2.5 h-16 px-5 border-b border-sidebar-border flex-shrink-0">

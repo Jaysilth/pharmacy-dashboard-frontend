@@ -132,7 +132,7 @@ right:-150
           }}
         />
 
-        {/* ── Background: blueprint grid mesh ── */}
+        {/* ── Background: blueprint grid mesh ──
         <div
           className="pointer-events-none absolute inset-0"
           style={{
@@ -140,7 +140,7 @@ right:-150
               "linear-gradient(to right, rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.03) 1px, transparent 1px)",
             backgroundSize: "24px 24px",
           }}
-        />
+        /> */}
 
         {/* ── TOP: Secure Gateway badge ── */}
         <div className="relative z-10 flex items-center gap-2">
