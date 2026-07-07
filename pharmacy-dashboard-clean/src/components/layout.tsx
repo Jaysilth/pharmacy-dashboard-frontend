@@ -197,7 +197,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   );
 
   return (
-    <div className="min-h-screen flex bg-background">
+    <div className="h-screen overflow-hidden flex bg-background">
 
       {/* ══════════════════════════════════════════
           DESKTOP SIDEBAR (hidden on mobile)
