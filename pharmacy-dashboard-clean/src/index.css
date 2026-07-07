@@ -208,13 +208,68 @@
 
   /* ── Card shadow + hover lift (style guide: translateY -4px, 250ms) ─────── */
   .card-lift {
-    box-shadow: var(--shadow-card);
-    transition: transform 250ms ease, box-shadow 250ms ease;
-  }
-  .card-lift:hover {
-    transform: translateY(-4px);
-    box-shadow: var(--shadow-card-hover);
-  }
+  position: relative;
+  overflow: hidden;
+
+  box-shadow: var(--shadow-card);
+
+  transition:
+    transform 250ms ease,
+    box-shadow 250ms ease,
+    border-color 250ms ease;
+}
+
+/* Light Mode */
+.card-lift:hover {
+  transform:
+    translateY(-4px)
+    scale(1.015); 
+
+  box-shadow:
+    0 0 0 1px rgba(15,23,42,.06),
+    0 10px 30px rgba(15,23,42,.10),
+    0 20px 50px rgba(15,23,42,.12);
+
+  border-color: rgba(15,23,42,.08);
+}
+
+/* Dark Mode */
+.dark .card-lift:hover {
+
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,.05),
+    0 0 18px rgba(96,165,250,.18),
+    0 15px 35px rgba(0,0,0,.45);
+
+  border-color: rgba(255,255,255,.08);
+}
+
+.card-lift::before{
+    content:"";
+
+    position:absolute;
+
+    inset:0;
+
+    pointer-events:none;
+
+    opacity:0;
+
+    transition:opacity .25s ease;
+
+    background:
+        linear-gradient(
+            135deg,
+            rgba(255,255,255,.22),
+            transparent 45%
+        );
+}
+
+.card-lift:hover::before{
+
+    opacity:1;
+
+}
 
   /* ── Sidebar active item — light blue bg, blue text/icon ────────────────── */
   .sidebar-active {
