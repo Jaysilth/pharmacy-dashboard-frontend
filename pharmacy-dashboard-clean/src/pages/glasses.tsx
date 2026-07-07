@@ -255,7 +255,7 @@ function RepairModal({ item, trigger }: { item?: GlassesRepair; trigger?: React.
   };
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogTrigger asChild>{trigger ?? <Button><Plus className="mr-2 h-4 w-4" />Add "Glasses Fixing"</Button>}</DialogTrigger>
+      <DialogTrigger asChild>{trigger ?? <Button><Plus className="mr-2 h-4 w-4" />Add Glasses Fixing</Button>}</DialogTrigger>
       <DialogContent className="sm:max-w-[420px]">
         <DialogHeader><DialogTitle>{item ? "Edit Glasses Fixing" : "Add Glasses Fixing"}</DialogTitle></DialogHeader>
         <Form {...form}>
@@ -318,7 +318,7 @@ export default function GlassesPage() {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-foreground">Glasses & Eyewear</h1>
-          <p className="text-muted-foreground mt-1">Manage frames, accessories, and repair services.</p>
+          <p className="text-muted-foreground mt-1">Manage frames, accessories, and glasses fixing services.</p>
         </div>
         {activeTab === "FRAMES"      && <GlassesFormModal />}
         {activeTab === "ACCESSORIES" && <AccessoryModal />}
