@@ -21,7 +21,7 @@ const CATEGORIES = [
   { value: "EYEDROP",   label: "Eye Drop" },
   { value: "TABLET",    label: "Tablet" },
   { value: "INJECTION", label: "Injection" },
-  { value: "SYRUP",     label: "Syrup" },
+  { value: "SYRUP",     label: "Ointment" },
 ];
 
 const CATEGORY_BADGE: Record<string, string> = {
@@ -35,7 +35,7 @@ const CATEGORY_LABEL: Record<string, string> = {
   EYEDROP:   "Eye Drop",
   TABLET:    "Tablet",
   INJECTION: "Injection",
-  SYRUP:     "Syrup",
+  SYRUP:     "Ointment",
 };
 
 export default function Medicines() {

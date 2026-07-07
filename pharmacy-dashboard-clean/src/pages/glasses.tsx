@@ -250,14 +250,14 @@ function RepairModal({ item, trigger }: { item?: GlassesRepair; trigger?: React.
   const onOpenChange = (v: boolean) => { setOpen(v); if (v) form.reset(def(item)); };
   const onSubmit = (values: RepairForm) => {
     const payload: GlassesRepairInput = { ...values, price: Number(values.price) };
-    if (item) update.mutate({ id: item.id, data: payload }, { onSuccess: () => { toast({ title: "Repair service updated." }); setOpen(false); }, onError: e => toast({ title: "Error", description: e instanceof ApiError ? e.message : String(e), variant: "destructive" }) });
-    else create.mutate(payload, { onSuccess: () => { toast({ title: "Repair service added." }); form.reset(def()); setOpen(false); }, onError: e => toast({ title: "Error", description: e instanceof ApiError ? e.message : String(e), variant: "destructive" }) });
+    if (item) update.mutate({ id: item.id, data: payload }, { onSuccess: () => { toast({ title: "Glasses Fixing updated." }); setOpen(false); }, onError: e => toast({ title: "Error", description: e instanceof ApiError ? e.message : String(e), variant: "destructive" }) });
+    else create.mutate(payload, { onSuccess: () => { toast({ title: "Glasses Fixing added." }); form.reset(def()); setOpen(false); }, onError: e => toast({ title: "Error", description: e instanceof ApiError ? e.message : String(e), variant: "destructive" }) });
   };
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogTrigger asChild>{trigger ?? <Button><Plus className="mr-2 h-4 w-4" />Add Repair Service</Button>}</DialogTrigger>
+      <DialogTrigger asChild>{trigger ?? <Button><Plus className="mr-2 h-4 w-4" />Add "Glasses Fixing"</Button>}</DialogTrigger>
       <DialogContent className="sm:max-w-[420px]">
-        <DialogHeader><DialogTitle>{item ? "Edit Repair Service" : "Add Repair Service"}</DialogTitle></DialogHeader>
+        <DialogHeader><DialogTitle>{item ? "Edit Glasses Fixing" : "Add Glasses Fixing"}</DialogTitle></DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pt-2">
             <FormField control={form.control} name="name" render={({ field }) => (<FormItem><FormLabel>Service Name</FormLabel><FormControl><Input placeholder="e.g. Frame Adjustment, Lens Replacement…" {...field} /></FormControl><FormMessage /></FormItem>)} />
@@ -310,7 +310,7 @@ export default function GlassesPage() {
   const tabs: { value: GlassesTab; label: string }[] = [
     { value: "FRAMES",      label: "Frames & Lenses" },
     { value: "ACCESSORIES", label: "Accessories" },
-    { value: "REPAIRS",     label: "Repair Services" },
+    { value: "REPAIRS",     label: "Glasses Fixing" },
   ];
 
   return (

@@ -34,7 +34,7 @@ const CATEGORIES = [
   { value: "EYEDROP",   label: "Eye Drop" },
   { value: "TABLET",    label: "Tablet" },
   { value: "INJECTION", label: "Injection" },
-  { value: "SYRUP",     label: "Syrup" },
+  { value: "SYRUP",     label: "Ointment" },
 ] as const;
 
 // ── Form schema ───────────────────────────────────────────────────────────────
