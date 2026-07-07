@@ -66,7 +66,41 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen flex bg-white">
+    <div
+className="min-h-screen flex relative overflow-hidden"
+style={{
+
+background:
+
+"linear-gradient(135deg,#0F172A,#1E3A5F,#2F80ED)"
+
+}}
+>
+  <div
+
+className="absolute
+
+w-[700px]
+
+h-[700px]
+
+rounded-full
+
+blur-[120px]
+
+opacity-30"
+
+style={{
+
+background:"#60A5FA",
+
+top:-200,
+
+right:-150
+
+}}
+
+/>
 
       {/* ═══════════════════════════════════════════════════════════════
           LEFT PANEL — desktop only
@@ -207,7 +241,20 @@ export default function Login() {
           RIGHT PANEL — login form
       ════════════════════════════════════════════════════════════════ */}
       <div className="flex-1 flex flex-col items-center justify-center px-6 py-12 bg-white">
-        <div className="w-full max-w-[380px] space-y-8">
+        <div
+
+className="
+w-full
+max-w-[420px]
+space-y-8
+login-glass
+rounded-[32px]
+p-10
+border
+border-white/15
+"
+
+>
 
           {/* Mobile logo (hidden on desktop — left panel covers it) */}
           <div className="flex items-center gap-2 md:hidden">
@@ -248,7 +295,23 @@ export default function Login() {
                         autoComplete="username"
                         placeholder="Enter your username or email"
                         data-testid="input-username"
-                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3.5 text-sm text-slate-800 placeholder-slate-400 outline-none transition-all duration-200"
+                        className="
+w-full
+rounded-2xl
+border
+border-white/15
+bg-white/10
+backdrop-blur-md
+px-4
+py-3.5
+pr-12
+text-sm
+text-white
+placeholder:text-slate-300
+outline-none
+transition-all
+duration-300
+"
                         style={
                           form.formState.errors.username
                             ? { borderColor: "#ef4444", boxShadow: "0 0 0 3px rgba(239,68,68,0.12)" }
@@ -257,12 +320,12 @@ export default function Login() {
                         onFocus={(e) => {
                           e.currentTarget.style.borderColor = "#4a85a4";
                           e.currentTarget.style.boxShadow  = "0 0 0 4px rgba(74,133,164,0.15)";
-                          e.currentTarget.style.background = "#ffffff";
+                          e.currentTarget.style.background="rgba(255,255,255,.14)";
                         }}
                         onBlur={(e) => {
                           e.currentTarget.style.borderColor = form.formState.errors.username ? "#ef4444" : "#e2e8f0";
                           e.currentTarget.style.boxShadow  = form.formState.errors.username ? "0 0 0 3px rgba(239,68,68,0.12)" : "none";
-                          e.currentTarget.style.background = "#f8fafc";
+                          e.currentTarget.style.background="rgba(255,255,255,.08)";
                         }}
                       />
                     </FormControl>
@@ -288,7 +351,22 @@ export default function Login() {
                           autoComplete="current-password"
                           placeholder="Enter your password"
                           data-testid="input-password"
-                          className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3.5 pr-12 text-sm text-slate-800 placeholder-slate-400 outline-none transition-all duration-200"
+                          className="
+w-full
+rounded-2xl
+border
+border-white/15
+bg-white/10
+backdrop-blur-md
+px-4
+py-3.5
+text-sm
+text-white
+placeholder:text-slate-300
+outline-none
+transition-all
+duration-300
+"
                           style={
                             form.formState.errors.password
                               ? { borderColor: "#ef4444", boxShadow: "0 0 0 3px rgba(239,68,68,0.12)" }
@@ -297,12 +375,12 @@ export default function Login() {
                           onFocus={(e) => {
                             e.currentTarget.style.borderColor = "#4a85a4";
                             e.currentTarget.style.boxShadow  = "0 0 0 4px rgba(74,133,164,0.15)";
-                            e.currentTarget.style.background = "#ffffff";
+                            e.currentTarget.style.background="rgba(255,255,255,.14)";
                           }}
                           onBlur={(e) => {
                             e.currentTarget.style.borderColor = form.formState.errors.password ? "#ef4444" : "#e2e8f0";
                             e.currentTarget.style.boxShadow  = form.formState.errors.password ? "0 0 0 3px rgba(239,68,68,0.12)" : "none";
-                            e.currentTarget.style.background = "#f8fafc";
+                            e.currentTarget.style.background="rgba(255,255,255,.08)";
                           }}
                         />
                         <button

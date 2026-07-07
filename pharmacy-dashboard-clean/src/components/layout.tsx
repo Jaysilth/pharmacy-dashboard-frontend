@@ -67,12 +67,15 @@ function NavLink({
       href={item.href}
       onClick={onClick}
       className={cn(
-        "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium",
-        "transition-all duration-150 select-none",
-        isActive
-       ? "sidebar-active font-semibold"
-      : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground",
-      )}
+  "glass-nav",
+  "flex items-center gap-3 px-3 py-2.5 rounded-xl",
+  "text-sm font-medium",
+  "transition-all duration-300",
+  "select-none",
+  isActive
+    ? "active text-white"
+    : "text-sidebar-foreground/70 hover:text-sidebar-foreground"
+)}
     >
       <Icon className="h-4 w-4 flex-shrink-0" />
       {item.name}
@@ -121,11 +124,16 @@ function ThemeToggle({ compact = false }: { compact?: boolean }) {
     <button
       onClick={toggleTheme}
       className={cn(
-        "flex items-center gap-2 rounded-xl transition-all duration-200",
-        "text-sidebar-foreground/70 hover:text-sidebar-foreground",
-        "hover:bg-sidebar-accent active:scale-95",
-        compact ? "p-2" : "px-3 py-2 text-xs font-medium w-full",
-      )}
+  "glass-nav",
+  "flex items-center gap-2 rounded-xl",
+  "transition-all duration-300",
+  "text-sidebar-foreground/70",
+  "hover:text-sidebar-foreground",
+  "active:scale-95",
+  compact
+    ? "p-2"
+    : "px-3 py-2 text-xs font-medium w-full"
+)}
       aria-label="Toggle theme"
     >
       {isDark ? (
@@ -171,7 +179,17 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
   const ProfileSection = ({ onLogout }: { onLogout: () => void }) => (
     <div className="px-3 pb-4 space-y-1">
-      <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-sidebar-accent/60">
+      <div
+  className="
+    glass
+    flex
+    items-center
+    gap-3
+    px-3
+    py-2.5
+    rounded-xl
+  "
+>
         <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
           <User className="h-4 w-4 text-primary" />
         </div>
@@ -185,10 +203,22 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       <ThemeToggle />
       <button
         onClick={onLogout}
-        className="flex items-center gap-2 w-full px-3 py-2 rounded-xl text-xs font-medium
-          text-sidebar-foreground/70 hover:text-destructive hover:bg-destructive/10
-          transition-all duration-150"
-        data-testid="button-logout"
+        className="
+glass-nav
+flex
+items-center
+gap-2
+w-full
+px-3
+py-2
+rounded-xl
+text-xs
+font-medium
+text-sidebar-foreground/70
+hover:text-destructive
+transition-all
+duration-300
+"
       >
         <LogOut className="h-4 w-4" />
         Sign out
@@ -202,7 +232,20 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       {/* ══════════════════════════════════════════
           DESKTOP SIDEBAR (hidden on mobile)
       ══════════════════════════════════════════ */}
-      <aside className="hidden md:flex w-[280px] flex-col flex-shrink-0 bg-sidebar relative overflow-hidden" style={{ boxShadow: "1px 0 0 hsl(220 13% 92%)" }}>
+      <aside
+  className="
+    hidden
+    md:flex
+    w-[280px]
+    flex-col
+    flex-shrink-0
+    glass
+    relative
+    overflow-hidden
+    rounded-[30px]
+    m-4
+  "
+> 
 
         {/* Blueprint grid overlay (decorative) */}
         <div

@@ -233,3 +233,127 @@
     background-color: hsl(222 35% 14%);
   }
 }
+
+/* =====================================================
+   LIQUID GLASS DESIGN SYSTEM
+=====================================================*/
+
+:root{
+    --glass-bg: rgba(255,255,255,.10);
+    --glass-bg-dark: rgba(17,24,39,.55);
+
+    --glass-border: rgba(255,255,255,.18);
+
+    --glass-shadow:
+        0 10px 40px rgba(15,23,42,.18);
+
+    --glass-hover:
+        rgba(255,255,255,.16);
+
+    --glass-active:
+        rgba(255,255,255,.24);
+
+    --glass-blur:28px;
+}
+
+/* Main glass container */
+
+.glass {
+  background: rgba(255,255,255,.08);
+  backdrop-filter: blur(28px) saturate(180%);
+  -webkit-backdrop-filter: blur(28px) saturate(180%);
+  border: 1px solid rgba(255,255,255,.18);
+
+  box-shadow:
+    inset 0 1px 1px rgba(255,255,255,.25),
+    0 10px 40px rgba(15,23,42,.18);
+
+  overflow: hidden;
+  position: relative;
+}
+
+.glass::before{
+    content:"";
+
+    position:absolute;
+
+    inset:0;
+
+    pointer-events:none;
+
+    background:
+    linear-gradient(
+        135deg,
+        rgba(255,255,255,.20),
+        rgba(255,255,255,0)
+    );
+
+    opacity:.8;
+}
+
+/* Dark mode */
+
+.dark .glass{
+
+    background:var(--glass-bg-dark);
+
+}
+
+/* Navigation */
+
+.glass-nav{
+
+    transition:.25s;
+
+}
+
+.glass-nav:hover{
+
+    background:var(--glass-hover);
+
+}
+
+.glass-nav.active{
+
+    background:var(--glass-active);
+
+}
+
+/* Login */
+
+.login-glass{
+    background:rgba(255,255,255,.12);
+
+    backdrop-filter:blur(30px) saturate(180%);
+
+    -webkit-backdrop-filter:blur(30px) saturate(180%);
+
+    border:1px solid rgba(255,255,255,.18);
+
+    box-shadow:
+        inset 0 1px 1px rgba(255,255,255,.22),
+        0 25px 70px rgba(0,0,0,.35);
+
+    position:relative;
+
+    overflow:hidden;
+}
+
+.login-glass::before{
+
+    content:"";
+
+    position:absolute;
+
+    inset:0;
+
+    background:
+    linear-gradient(
+        135deg,
+        rgba(255,255,255,.18),
+        transparent
+    );
+
+    pointer-events:none;
+
+}
