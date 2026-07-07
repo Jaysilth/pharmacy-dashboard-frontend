@@ -168,7 +168,7 @@ function ConsumableModal({
   );
 }
 
-// ── Main page ─────────────────────────────────────────────────────────────────
+// ONLY showing the updated main page (modal stays unchanged)
 
 export default function ConsumablesPage() {
   const [activeTab, setActiveTab] = useState<PageTab>("STOCK");
@@ -180,35 +180,41 @@ export default function ConsumablesPage() {
     { search: search || undefined },
     { enabled: activeTab === "STOCK" },
   );
+
   const { data: usageLog, isLoading: loadingLog } = useGetConsumableUsage();
+
   const deleteConsumable = useDeleteConsumable();
   const deleteUsage = useDeleteConsumableUsage();
+
   return (
-    <div className="space-y-6 max-w-7xl mx-auto">
+    <div className="space-y-6 max-w-7xl mx-auto px-4">
+      
+      {/* HEADER */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">Consumables</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Consumables</h1>
           <p className="text-muted-foreground mt-1">
             Internal medical supplies — tracked by usage, not sold.
           </p>
         </div>
+
         {activeTab === "STOCK" && <ConsumableModal />}
       </div>
 
-      {/* Tabs */}
-      <div className="flex gap-1.5">
+      {/* TABS */}
+      <div className="flex gap-2">
         {[
-          { value: "STOCK",     label: "Stock",     icon: Package },
+          { value: "STOCK", label: "Stock", icon: Package },
           { value: "USAGE_LOG", label: "Usage Log", icon: History },
-        ].map(t => (
+        ].map((t) => (
           <button
             key={t.value}
             onClick={() => setActiveTab(t.value as PageTab)}
             className={cn(
-              "flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium border transition-colors",
+              "flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium border transition-all",
               activeTab === t.value
-                ? "bg-primary text-primary-foreground border-primary"
-                : "bg-background border-border text-muted-foreground hover:bg-muted/50",
+                ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                : "bg-background border-border text-muted-foreground hover:bg-muted/50"
             )}
           >
             <t.icon className="h-4 w-4" />
@@ -217,252 +223,271 @@ export default function ConsumablesPage() {
         ))}
       </div>
 
-      <Card className="shadow-sm border-border">
+      <Card className="shadow-sm border-border overflow-hidden">
+
+        {/* SEARCH */}
         {activeTab === "STOCK" && (
-          <CardHeader className="py-3 px-4 border-b border-border bg-muted/20">
-            <div className="relative max-w-sm">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                className="pl-9 bg-background"
-                placeholder="Search consumables…"
-                value={search}
-                onChange={e => setSearch(e.target.value)}
-              />
+          <CardHeader className="py-3 px-4 border-b bg-muted/30">
+            <div className="flex items-center justify-between">
+              <div className="relative w-full max-w-sm">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  className="pl-9"
+                  placeholder="Search consumables…"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                />
+              </div>
             </div>
           </CardHeader>
         )}
 
         <CardContent className="p-0 overflow-x-auto">
+          <Table className="text-sm">
 
-          {/* ── STOCK TAB ── */}
-          {activeTab === "STOCK" && (
-            <Table>
-              <TableHeader className="bg-muted/30">
-                <TableRow>
-                  <TableHead className="pl-6">Name</TableHead>
-                  <TableHead>Unit</TableHead>
-                  <TableHead>Description</TableHead>
-                  <TableHead className="text-right">In Stock</TableHead>
-                  <TableHead className="text-right">Reorder At</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right pr-6">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {isLoading ? (
-                  Array.from({ length: 5 }).map((_, i) => (
-                    <TableRow key={i}>
-                      {Array.from({ length: 7 }).map((__, j) => (
-                        <TableCell key={j}><Skeleton className="h-5 w-full" /></TableCell>
-                      ))}
-                    </TableRow>
-                  ))
-                ) : consumables && consumables.length > 0 ? (
-                  consumables.map(c => (
-                    <TableRow key={c.id} className="hover:bg-muted/10">
-                      <TableCell className="pl-6 font-medium">{c.name}</TableCell>
-                      <TableCell className="text-muted-foreground">{c.unit}</TableCell>
-                      <TableCell className="text-muted-foreground text-sm max-w-[180px] truncate">
-                        {c.description || "—"}
-                      </TableCell>
-                      <TableCell className="text-right font-mono font-semibold">
-                        {c.quantityInStock}
-                      </TableCell>
-                      <TableCell className="text-right font-mono text-muted-foreground">
-                        {c.reorderLevel}
-                      </TableCell>
-                      <TableCell>
-                        {c.lowStock ? (
-                          <Badge variant="destructive">Low Stock</Badge>
-                        ) : (
-                          <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
-                            OK
-                          </Badge>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-right pr-6">
-                        
-                          <div className="flex justify-end gap-1">
-                            <ConsumableModal
-                           item={c}
-                          trigger={
-                            <Button variant="ghost" size="icon">
-                              <Edit className="h-4 w-4 text-muted-foreground" />
-                            </Button>
-                          }
-                           />
-                            <AlertDialog>
-                              <AlertDialogTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="text-destructive hover:bg-destructive/10"
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </AlertDialogTrigger>
-                              <AlertDialogContent>
-                                <AlertDialogHeader>
-                                  <AlertDialogTitle>Delete {c.name}?</AlertDialogTitle>
-                                  <AlertDialogDescription>
-                                    This removes the consumable and its usage history. Cannot be undone.
-                                  </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                  <AlertDialogAction
-                                    onClick={() =>
-                                      deleteConsumable.mutate(c.id, {
-                                        onSuccess: () => toast({ title: `${c.name} deleted.` }),
-                                        onError: e =>
-                                          toast({
-                                            title: "Delete failed",
-                                            description: e instanceof ApiError ? e.message : String(e),
-                                            variant: "destructive",
-                                          }),
-                                      })
-                                    }
-                                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                  >
-                                    Delete
-                                  </AlertDialogAction>
-                                </AlertDialogFooter>
-                              </AlertDialogContent>
-                            </AlertDialog>
-                          </div>
-                        ) : (
-                          <span className="text-muted-foreground text-sm">—</span>
-                        )
-                      </TableCell>
-                    </TableRow>
-                  ))
-                ) : (
+            {/* ================= STOCK TAB ================= */}
+            {activeTab === "STOCK" && (
+              <>
+                <TableHeader className="bg-muted/40">
                   <TableRow>
-                    <TableCell colSpan={7} className="h-32 text-center text-muted-foreground">
-                      {search ? `No consumables matching "${search}".` : "No consumables yet."}
-                    </TableCell>
+                    <TableHead className="pl-6">Name</TableHead>
+                    <TableHead>Unit</TableHead>
+                    <TableHead>Description</TableHead>
+                    <TableHead className="text-right">In Stock</TableHead>
+                    <TableHead className="text-right">Reorder At</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right pr-6">Actions</TableHead>
                   </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          )}
+                </TableHeader>
 
-          {/* ── USAGE LOG TAB ── */}
-          {activeTab === "USAGE_LOG" && (
-            <Table>
-              <TableHeader className="bg-muted/30">
-                <TableRow>
-                  <TableHead className="pl-6">Consumable</TableHead>
-                  <TableHead className="text-right">Qty Used</TableHead>
-                  <TableHead>Used By</TableHead>
-                  <TableHead>Linked To</TableHead>
-                  <TableHead>Notes</TableHead>
-                  <TableHead className="pr-6">Date</TableHead>
-                  <TableHead className="text-right pr-6">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {loadingLog ? (
-                  Array.from({ length: 5 }).map((_, i) => (
-                    <TableRow key={i}>
-                      {Array.from({ length: 7 }).map((__, j) => (
-                        <TableCell key={j}><Skeleton className="h-5 w-full" /></TableCell>
-                      ))}
-                    </TableRow>
-                  ))
-                ) : usageLog && usageLog.length > 0 ? (
-                  usageLog.map(u => (
-                    <TableRow key={u.id} className="hover:bg-muted/10">
-                      <TableCell className="pl-6 font-medium">{u.consumableName}</TableCell>
-                      <TableCell className="text-right font-mono font-semibold">
-                        {u.quantityUsed} <span className="text-xs text-muted-foreground">{u.unit}</span>
-                      </TableCell>
-                      <TableCell className="text-muted-foreground">{u.usedBy || "—"}</TableCell>
-                      <TableCell>
-                        {u.linkedEntityType ? (
-                          <div className="flex flex-col gap-0.5">
-                            <Badge
-                              variant="outline"
-                              className={cn(
-                                "text-[10px] w-fit",
-                                u.linkedEntityType === "SURGERY"   && "bg-rose-50 text-rose-700 border-rose-200",
-                                u.linkedEntityType === "PROCEDURE" && "bg-indigo-50 text-indigo-700 border-indigo-200",
-                                u.linkedEntityType === "LAB_TEST"  && "bg-amber-50 text-amber-700 border-amber-200",
-                              )}
-                            >
-                              {u.linkedEntityType.replace("_", " ")}
-                            </Badge>
-                            <span className="text-xs text-muted-foreground truncate max-w-[120px]">
-                              {u.surgeryName ?? u.procedureRef ?? u.labTestRef ?? ""}
-                            </span>
-                          </div>
-                        ) : (
-                          <span className="text-muted-foreground text-sm">—</span>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-muted-foreground text-sm max-w-[140px] truncate">
-                        {u.notes || "—"}
-                      </TableCell>
-                      <TableCell className="pr-6 text-sm text-muted-foreground">
-                        {format(new Date(u.usedAt), "dd MMM yyyy, HH:mm")}
-                      </TableCell>
-                      <TableCell className="text-right pr-6">
-                        {isSuperAdmin ? (
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="text-destructive hover:bg-destructive/10"
+                <TableBody>
+                  {isLoading ? (
+                    Array.from({ length: 5 }).map((_, i) => (
+                      <TableRow key={i} className="h-14">
+                        {Array.from({ length: 7 }).map((__, j) => (
+                          <TableCell key={j}>
+                            <Skeleton className="h-5 w-full" />
+                          </TableCell>
+                        ))}
+                      </TableRow>
+                    ))
+                  ) : consumables && consumables.length > 0 ? (
+                    consumables.map((c) => (
+                      <TableRow
+                        key={c.id}
+                        className="hover:bg-muted/10 h-14 [&>td]:align-middle"
+                      >
+                        <TableCell className="pl-6 font-medium">
+                          {c.name}
+                        </TableCell>
+
+                        <TableCell className="text-muted-foreground">
+                          {c.unit}
+                        </TableCell>
+
+                        <TableCell className="text-muted-foreground text-sm max-w-[180px] truncate">
+                          {c.description || "—"}
+                        </TableCell>
+
+                        <TableCell className="text-right font-mono tabular-nums font-semibold">
+                          {c.quantityInStock}
+                        </TableCell>
+
+                        <TableCell className="text-right font-mono tabular-nums text-muted-foreground">
+                          {c.reorderLevel}
+                        </TableCell>
+
+                        <TableCell>
+                          <div className="flex items-center">
+                            {c.lowStock ? (
+                              <Badge variant="destructive">
+                                Low Stock
+                              </Badge>
+                            ) : (
+                              <Badge
+                                variant="outline"
+                                className="bg-primary/10 text-primary border-primary/20"
                               >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>Delete this usage entry?</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  {u.quantityUsed} {u.unit} of {u.consumableName} will be added back to stock,
-                                  and this log entry will be permanently removed.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction
-                                  onClick={() =>
-                                    deleteUsage.mutate(u.id, {
-                                      onSuccess: () => toast({ title: "Usage entry deleted, stock restored." }),
-                                      onError: e =>
-                                        toast({
-                                          title: "Delete failed",
-                                          description: e instanceof ApiError ? e.message : String(e),
-                                          variant: "destructive",
-                                        }),
-                                    })
-                                  }
-                                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                >
-                                  Delete
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                        ) : (
-                          <span className="text-muted-foreground text-sm">—</span>
-                        )}
+                                OK
+                              </Badge>
+                            )}
+                          </div>
+                        </TableCell>
+
+                        {/* FIXED ACTION COLUMN */}
+                        <TableCell className="text-right pr-6">
+                          {isSuperAdmin ? (
+                            <div className="flex justify-end items-center gap-2">
+                              <ConsumableModal
+                                item={c}
+                                trigger={
+                                  <Button variant="ghost" size="icon">
+                                    <Edit className="h-4 w-4 text-muted-foreground" />
+                                  </Button>
+                                }
+                              />
+
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="text-destructive hover:bg-destructive/10"
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </AlertDialogTrigger>
+
+                                <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>
+                                      Delete {c.name}?
+                                    </AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      This removes the consumable and its usage history.
+                                      Cannot be undone.
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel>
+                                      Cancel
+                                    </AlertDialogCancel>
+                                    <AlertDialogAction
+                                      onClick={() =>
+                                        deleteConsumable.mutate(c.id, {
+                                          onSuccess: () =>
+                                            toast({
+                                              title: `${c.name} deleted.`,
+                                            }),
+                                          onError: (e) =>
+                                            toast({
+                                              title: "Delete failed",
+                                              description:
+                                                e instanceof ApiError
+                                                  ? e.message
+                                                  : String(e),
+                                              variant: "destructive",
+                                            }),
+                                        })
+                                      }
+                                      className="bg-destructive text-destructive-foreground"
+                                    >
+                                      Delete
+                                    </AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
+                            </div>
+                          ) : (
+                            <span className="text-muted-foreground text-sm">
+                              —
+                            </span>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell
+                        colSpan={7}
+                        className="h-32 text-center text-muted-foreground"
+                      >
+                        {search
+                          ? `No consumables matching "${search}".`
+                          : "No consumables yet."}
                       </TableCell>
                     </TableRow>
-                  ))
-                ) : (
+                  )}
+                </TableBody>
+              </>
+            )}
+
+            {/* ================= USAGE LOG TAB ================= */}
+            {activeTab === "USAGE_LOG" && (
+              <>
+                <TableHeader className="bg-muted/40">
                   <TableRow>
-                    <TableCell colSpan={7} className="h-32 text-center text-muted-foreground">
-                      No usage recorded yet.
-                    </TableCell>
+                    <TableHead className="pl-6">Consumable</TableHead>
+                    <TableHead className="text-right">Qty Used</TableHead>
+                    <TableHead>Used By</TableHead>
+                    <TableHead>Linked To</TableHead>
+                    <TableHead>Notes</TableHead>
+                    <TableHead>Date</TableHead>
+                    <TableHead className="text-right pr-6">Actions</TableHead>
                   </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          )}
+                </TableHeader>
+
+                <TableBody>
+                  {loadingLog ? (
+                    Array.from({ length: 5 }).map((_, i) => (
+                      <TableRow key={i} className="h-14">
+                        {Array.from({ length: 7 }).map((__, j) => (
+                          <TableCell key={j}>
+                            <Skeleton className="h-5 w-full" />
+                          </TableCell>
+                        ))}
+                      </TableRow>
+                    ))
+                  ) : usageLog && usageLog.length > 0 ? (
+                    usageLog.map((u) => (
+                      <TableRow
+                        key={u.id}
+                        className="hover:bg-muted/10 h-14 [&>td]:align-middle"
+                      >
+                        <TableCell className="pl-6 font-medium">
+                          {u.consumableName}
+                        </TableCell>
+
+                        <TableCell className="text-right font-mono tabular-nums font-semibold">
+                          {u.quantityUsed}
+                        </TableCell>
+
+                        <TableCell className="text-muted-foreground">
+                          {u.usedBy || "—"}
+                        </TableCell>
+
+                        <TableCell className="text-muted-foreground">
+                          {u.linkedEntityType || "—"}
+                        </TableCell>
+
+                        <TableCell className="text-muted-foreground text-sm truncate max-w-[140px]">
+                          {u.notes || "—"}
+                        </TableCell>
+
+                        <TableCell className="text-muted-foreground text-sm">
+                          {format(new Date(u.usedAt), "dd MMM yyyy")}
+                        </TableCell>
+
+                        <TableCell className="text-right pr-6">
+                          {isSuperAdmin ? (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="text-destructive"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          ) : (
+                            "—"
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell
+                        colSpan={7}
+                        className="h-32 text-center text-muted-foreground"
+                      >
+                        No usage recorded yet.
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </>
+            )}
+          </Table>
         </CardContent>
       </Card>
     </div>
