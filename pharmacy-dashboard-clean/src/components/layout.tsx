@@ -70,8 +70,8 @@ function NavLink({
         "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium",
         "transition-all duration-150 select-none",
         isActive
-          ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-sm"
-          : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-foreground",
+       ? "sidebar-active font-semibold"
+      : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground",
       )}
     >
       <Icon className="h-4 w-4 flex-shrink-0" />
@@ -202,14 +202,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       {/* ══════════════════════════════════════════
           DESKTOP SIDEBAR (hidden on mobile)
       ══════════════════════════════════════════ */}
-      <aside
-        className={cn(
-          "hidden md:flex w-60 flex-col flex-shrink-0",
-          "bg-sidebar border-r border-sidebar-border",
-          // Subtle blueprint grid (matches login panel)
-          "relative overflow-hidden",
-        )}
-      >
+      <aside className="hidden md:flex w-[280px] flex-col flex-shrink-0 bg-sidebar relative overflow-hidden" style={{ boxShadow: "1px 0 0 hsl(220 13% 92%)" }}>
+
         {/* Blueprint grid overlay (decorative) */}
         <div
           className="pointer-events-none absolute inset-0 opacity-[0.03]"
@@ -259,9 +253,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       />
 
       {/* Drawer panel */}
-      <aside
-        className={cn(
-          "fixed inset-y-0 left-0 z-50 w-72 flex flex-col md:hidden",
+      <aside className={cn("fixed inset-y-0 left-0 z-50 w-[280px] flex flex-col md:hidden",
           "bg-sidebar border-r border-sidebar-border",
           "transition-transform duration-300 ease-in-out",
           drawerOpen ? "translate-x-0" : "-translate-x-full",

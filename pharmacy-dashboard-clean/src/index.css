@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 @import "tailwindcss";
 @import "tw-animate-css";
 @plugin "@tailwindcss/typography";
@@ -25,6 +25,10 @@
   --color-accent-foreground:       hsl(var(--accent-foreground));
   --color-destructive:             hsl(var(--destructive));
   --color-destructive-foreground:  hsl(var(--destructive-foreground));
+  --color-success:                 hsl(var(--success));
+  --color-success-foreground:      hsl(var(--success-foreground));
+  --color-warning:                 hsl(var(--warning));
+  --color-warning-foreground:      hsl(var(--warning-foreground));
   --color-chart-1:                 hsl(var(--chart-1));
   --color-chart-2:                 hsl(var(--chart-2));
   --color-chart-3:                 hsl(var(--chart-3));
@@ -39,10 +43,18 @@
   --color-sidebar-accent-foreground: hsl(var(--sidebar-accent-foreground));
   --color-sidebar-ring:            hsl(var(--sidebar-ring));
 
-  --font-sans:  var(--app-font-sans);
-  --font-mono:  var(--app-font-mono);
+  --font-sans: var(--app-font-sans);
+  --font-mono: var(--app-font-mono);
 
-  --radius-sm:  calc(var(--radius) - 4px);
+  /*
+   * Radius scale maps to Tailwind utilities:
+   *   rounded-sm  → 10px (badges, tight elements)
+   *   rounded-md  → 14px (buttons, inputs)
+   *   rounded-lg  → 16px (table containers, chips)
+   *   rounded-xl  → 20px (cards — the primary surface unit)
+   *   rounded-2xl → 24px (large panels, modals)
+   */
+  --radius-sm:  calc(var(--radius) - 6px);
   --radius-md:  calc(var(--radius) - 2px);
   --radius-lg:  var(--radius);
   --radius-xl:  calc(var(--radius) + 4px);
@@ -50,119 +62,174 @@
 
 /* ─── LIGHT MODE ────────────────────────────────────────────────────────────── */
 :root {
-  /* Brand: Steel Blue #4a85a4 → HSL 201 38% 47% */
-  --primary:                 201 38% 47%;
-  --primary-foreground:      0 0% 100%;
+  /* ── Primary: Medical Blue #2F80ED ──────────────────────────────────────── */
+  /* HSL(214, 84%, 56%) — clinical, Stripe-grade, not fintech teal            */
+  --primary:               214 84% 56%;
+  --primary-foreground:    0 0% 100%;
 
-  /* Canvas */
-  --background:              210 20% 98%;   /* #f8fafc — medical off-white       */
-  --foreground:              215 28% 12%;   /* dark slate                         */
+  /* ── Canvas ─────────────────────────────────────────────────────────────── */
+  /* #F7F9FC — the style guide's specific "airy medical" off-white             */
+  --background:            220 43% 98%;
+  --foreground:            217 33% 17%;   /* #1E293B */
 
-  /* Cards */
-  --card:                    0 0% 100%;
-  --card-foreground:         215 28% 12%;
-  --popover:                 0 0% 100%;
-  --popover-foreground:      215 28% 12%;
+  /* ── Surfaces ───────────────────────────────────────────────────────────── */
+  --card:                  0 0% 100%;     /* pure white cards on #F7F9FC bg    */
+  --card-foreground:       217 33% 17%;
+  --popover:               0 0% 100%;
+  --popover-foreground:    217 33% 17%;
 
-  /* Supporting */
-  --secondary:               210 16% 93%;
-  --secondary-foreground:    215 20% 25%;
-  --muted:                   210 16% 94%;
-  --muted-foreground:        215 14% 52%;
-  --accent:                  201 38% 94%;
-  --accent-foreground:       201 38% 28%;
+  /* ── Supporting ─────────────────────────────────────────────────────────── */
+  --secondary:             214 20% 95%;
+  --secondary-foreground:  217 33% 17%;
+  --muted:                 215 20% 95%;
+  --muted-foreground:      215 16% 47%;   /* #64748B */
+  --accent:                214 84% 95%;   /* very light primary tint           */
+  --accent-foreground:     214 84% 35%;
 
-  /* States */
-  --destructive:             0 84% 60%;
-  --destructive-foreground:  0 0% 100%;
-  --border:                  210 16% 89%;
-  --input:                   210 16% 89%;
-  --ring:                    201 38% 47%;
+  /* ── Semantic ───────────────────────────────────────────────────────────── */
+  --destructive:           0 79% 63%;     /* #EB5757 */
+  --destructive-foreground: 0 0% 100%;
+  --success:               145 63% 42%;   /* #27AE60 */
+  --success-foreground:    0 0% 100%;
+  --warning:               45 86% 62%;    /* #F2C94C */
+  --warning-foreground:    30 50% 20%;
 
-  /* Charts — clinical palette */
-  --chart-1:  201 38% 47%;   /* Steel Blue  #4a85a4 */
-  --chart-2:  160 55% 42%;   /* Clinical Teal       */
-  --chart-3:  38  88% 55%;   /* Warm Amber          */
-  --chart-4:  350 72% 58%;   /* Rose                */
-  --chart-5:  270 52% 58%;   /* Violet              */
+  /* ── Borders ────────────────────────────────────────────────────────────── */
+  --border:                220 13% 91%;
+  --input:                 220 13% 91%;
+  --ring:                  214 84% 56%;
 
-  /* Sidebar — clean white */
-  --sidebar:                      0 0% 100%;
-  --sidebar-foreground:           215 25% 22%;
-  --sidebar-border:               210 16% 91%;
-  --sidebar-primary:              201 38% 47%;
-  --sidebar-primary-foreground:   0 0% 100%;
-  --sidebar-accent:               210 16% 95%;
-  --sidebar-accent-foreground:    215 25% 22%;
-  --sidebar-ring:                 201 38% 47%;
+  /* ── Charts ─────────────────────────────────────────────────────────────── */
+  --chart-1:               214 84% 56%;   /* Medical Blue  #2F80ED            */
+  --chart-2:               204 70% 63%;   /* Accent Blue   #5DADE2            */
+  --chart-3:               145 63% 42%;   /* Success Green #27AE60            */
+  --chart-4:               45  86% 62%;   /* Warning Amber #F2C94C            */
+  --chart-5:               0   79% 63%;   /* Danger Red    #EB5757            */
 
-  --app-font-sans: 'Plus Jakarta Sans', sans-serif;
+  /* ── Sidebar — white, clean, per spec ──────────────────────────────────── */
+  --sidebar:               0 0% 100%;
+  --sidebar-foreground:    217 33% 17%;
+  --sidebar-border:        220 13% 92%;
+  --sidebar-primary:       214 84% 56%;
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent:        220 30% 96%;   /* very light hover state            */
+  --sidebar-accent-foreground: 217 33% 17%;
+  --sidebar-ring:          214 84% 56%;
+
+  /* ── Base ───────────────────────────────────────────────────────────────── */
+  --app-font-sans: 'Inter', system-ui, sans-serif;
   --app-font-mono: ui-monospace, 'Cascadia Code', monospace;
-  --radius: 0.625rem;
+
+  /* 16px baseline — gives rounded-xl = 20px (cards), rounded-md = 14px (btns/inputs) */
+  --radius: 1rem;
+
+  /* ── Custom shadows (not Tailwind — injected via inline style or @layer) ── */
+  --shadow-card:        0 8px 30px rgba(15, 23, 42, 0.06);
+  --shadow-card-hover:  0 15px 45px rgba(15, 23, 42, 0.12);
+  --shadow-sm:          0 1px 4px rgba(15, 23, 42, 0.06);
 }
 
 /* ─── DARK MODE ─────────────────────────────────────────────────────────────── */
 .dark {
-  /* Brand stays steel blue but lightened for dark backgrounds */
-  --primary:                 207 37% 65%;   /* #8eb0cc — sky glow              */
-  --primary-foreground:      205 46% 8%;
+  /* Lightened primary for dark canvas readability */
+  --primary:               214 80% 65%;
+  --primary-foreground:    217 40% 8%;
 
-  /* Canvas — login page deep slate */
-  --background:              205 46% 7%;    /* darker than sidebar              */
-  --foreground:              210 20% 90%;
+  /* Deep navy canvas — matches login panel */
+  --background:            222 47% 7%;
+  --foreground:            215 20% 88%;
 
-  /* Cards — slightly lighter than canvas to create depth */
-  --card:                    205 46% 11%;
-  --card-foreground:         210 20% 90%;
-  --popover:                 205 46% 12%;
-  --popover-foreground:      210 20% 90%;
+  --card:                  222 40% 11%;
+  --card-foreground:       215 20% 88%;
+  --popover:               222 40% 12%;
+  --popover-foreground:    215 20% 88%;
 
-  /* Supporting */
-  --secondary:               205 40% 17%;
-  --secondary-foreground:    210 20% 82%;
-  --muted:                   205 40% 15%;
-  --muted-foreground:        210 18% 58%;
-  --accent:                  205 40% 17%;
-  --accent-foreground:       210 20% 82%;
+  --secondary:             222 35% 17%;
+  --secondary-foreground:  215 20% 82%;
+  --muted:                 222 35% 15%;
+  --muted-foreground:      215 18% 56%;
+  --accent:                222 35% 17%;
+  --accent-foreground:     215 20% 82%;
 
-  /* States */
-  --destructive:             0 60% 45%;
-  --destructive-foreground:  0 0% 100%;
-  --border:                  205 40% 17%;
-  --input:                   205 40% 17%;
-  --ring:                    207 37% 65%;
+  --destructive:           0 65% 50%;
+  --destructive-foreground: 0 0% 100%;
+  --success:               145 55% 45%;
+  --success-foreground:    0 0% 100%;
+  --warning:               45 80% 55%;
+  --warning-foreground:    0 0% 100%;
 
-  /* Charts — brightened for dark canvas */
-  --chart-1:  207 37% 65%;   /* Sky blue    */
-  --chart-2:  160 50% 55%;   /* Teal        */
-  --chart-3:  38  82% 62%;   /* Amber       */
-  --chart-4:  350 65% 65%;   /* Rose        */
-  --chart-5:  270 48% 68%;   /* Violet      */
+  --border:                222 35% 17%;
+  --input:                 222 35% 17%;
+  --ring:                  214 80% 65%;
 
-  /* Sidebar — #0e1c26 deep navy (matches login left panel) */
-  --sidebar:                      205 46% 10%;   /* #0e1c26 */
-  --sidebar-foreground:           210 18% 82%;
-  --sidebar-border:               205 40% 15%;
-  --sidebar-primary:              201 38% 47%;   /* steel blue stays solid */
-  --sidebar-primary-foreground:   0 0% 100%;
-  --sidebar-accent:               205 40% 15%;
-  --sidebar-accent-foreground:    210 18% 85%;
-  --sidebar-ring:                 207 37% 65%;
+  --chart-1:               214 80% 65%;
+  --chart-2:               204 65% 70%;
+  --chart-3:               145 55% 55%;
+  --chart-4:               45  75% 65%;
+  --chart-5:               0   65% 65%;
+
+  /* Sidebar — dark navy matching login left panel */
+  --sidebar:               222 47% 9%;
+  --sidebar-foreground:    215 18% 82%;
+  --sidebar-border:        222 35% 15%;
+  --sidebar-primary:       214 84% 56%;
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent:        222 35% 14%;
+  --sidebar-accent-foreground: 215 18% 85%;
+  --sidebar-ring:          214 80% 65%;
+
+  --shadow-card:        0 8px 30px rgba(0, 0, 0, 0.25);
+  --shadow-card-hover:  0 15px 45px rgba(0, 0, 0, 0.35);
 }
 
-/* ─── BASE ───────────────────────────────────────────────────────────────────── */
+/* ─── BASE LAYER ─────────────────────────────────────────────────────────────── */
 @layer base {
   * {
     @apply border-border;
   }
-  body {
-    @apply font-sans antialiased bg-background text-foreground;
-  }
-  /* Smooth theme transitions — keeps layout from flashing on toggle */
+
   html {
     color-scheme: light;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
   html.dark {
     color-scheme: dark;
+  }
+
+  body {
+    @apply font-sans bg-background text-foreground;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+}
+
+/* ─── COMPONENT LAYER ────────────────────────────────────────────────────────── */
+@layer components {
+
+  /* ── Card shadow + hover lift (style guide: translateY -4px, 250ms) ─────── */
+  .card-lift {
+    box-shadow: var(--shadow-card);
+    transition: transform 250ms ease, box-shadow 250ms ease;
+  }
+  .card-lift:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-card-hover);
+  }
+
+  /* ── Sidebar active item — light blue bg, blue text/icon ────────────────── */
+  .sidebar-active {
+    background-color: hsl(214 84% 56% / 0.10);
+    color: hsl(var(--sidebar-primary));
+  }
+  .sidebar-active svg {
+    color: hsl(var(--sidebar-primary));
+  }
+
+  /* ── Table enhancements ─────────────────────────────────────────────────── */
+  .table-row-hover:hover {
+    background-color: hsl(220 43% 98%);
+  }
+  .dark .table-row-hover:hover {
+    background-color: hsl(222 35% 14%);
   }
 }
