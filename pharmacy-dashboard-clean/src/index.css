@@ -206,70 +206,68 @@
 /* ─── COMPONENT LAYER ────────────────────────────────────────────────────────── */
 @layer components {
 
-  /* ── Card shadow + hover lift (style guide: translateY -4px, 250ms) ─────── */
+  /* ── Card shadow + hover lift — softened for the floating-workspace redesign ── */
   .card-lift {
-  position: relative;
-  overflow: hidden;
+    box-shadow: var(--shadow-card);
+    transition: transform 250ms ease, box-shadow 250ms ease;
+  }
+  .card-lift:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-card-hover);
+  }
 
-  box-shadow: var(--shadow-card);
+  /* ── Dashboard background (Layer 1) ──────────────────────────────────────
+     Light mode only. Soft, mostly-white canvas with barely-there blue glow,
+     just enough to separate the floating sidebar + workspace from the page.
+     Dark mode is neutralized below so nothing changes there.               */
+  .dashboard-bg {
+    background-color: hsl(var(--background));
+    background-image:
+      radial-gradient(ellipse 900px 560px at 12% -8%,  hsla(214, 84%, 60%, 0.07), transparent 60%),
+      radial-gradient(ellipse 700px 480px at 104% 8%,  hsla(206, 75%, 68%, 0.06), transparent 62%),
+      radial-gradient(ellipse 900px 620px at 50% 112%, hsla(0,   0%, 100%, 0.9),  transparent 70%);
+    background-attachment: fixed;
+  }
+  .dark .dashboard-bg {
+    background-image: none;
+    background-color: hsl(var(--background));
+  }
 
-  transition:
-    transform 250ms ease,
-    box-shadow 250ms ease,
-    border-color 250ms ease;
-}
+  /* ── Glass system (Layer 2) — sidebar + login card ONLY ──────────────────
+     macOS-style glass: lighter blur, higher opacity, crisp edge highlight,
+     soft shadow, subtle saturation boost — not frosted-acrylic.
+     Dark mode falls back to the original solid sidebar treatment untouched. */
+  .glass-panel {
+    background: hsla(0, 0%, 100%, 0.68);
+    backdrop-filter: blur(20px) saturate(1.6);
+    -webkit-backdrop-filter: blur(20px) saturate(1.6);
+    border: 1px solid hsla(0, 0%, 100%, 0.7);
+    box-shadow:
+      0 8px 32px rgba(15, 23, 42, 0.08),
+      0 1px 2px rgba(15, 23, 42, 0.04),
+      inset 0 1px 0 hsla(0, 0%, 100%, 0.6);
+  }
+  .dark .glass-panel {
+    background: hsl(var(--sidebar));
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    border: 1px solid hsl(var(--sidebar-border));
+    box-shadow: none;
+  }
 
-/* Light Mode */
-.card-lift:hover {
-  transform:
-    translateY(-4px)
-    scale(1.015); 
-
-  box-shadow:
-    0 0 0 1px rgba(15,23,42,.06),
-    0 10px 30px rgba(15,23,42,.10),
-    0 20px 50px rgba(15,23,42,.12);
-
-  border-color: rgba(15,23,42,.08);
-}
-
-/* Dark Mode */
-.dark .card-lift:hover {
-
-  box-shadow:
-    0 0 0 1px rgba(255,255,255,.05),
-    0 0 18px rgba(96,165,250,.18),
-    0 15px 35px rgba(0,0,0,.45);
-
-  border-color: rgba(255,255,255,.08);
-}
-
-.card-lift::before{
-    content:"";
-
-    position:absolute;
-
-    inset:0;
-
-    pointer-events:none;
-
-    opacity:0;
-
-    transition:opacity .25s ease;
-
-    background:
-        linear-gradient(
-            135deg,
-            rgba(255,255,255,.22),
-            transparent 45%
-        );
-}
-
-.card-lift:hover::before{
-
-    opacity:1;
-
-}
+  /* ── Floating white workspace (Layer 3) — primary dashboard surface ───────
+     Border/shadow only kick in at md+, since that's where the sidebar gap
+     and rounded corners apply too. (Tailwind can't generate `md:` variants
+     for hand-written classes, so the breakpoint is a real media query here.) */
+  .dashboard-workspace {
+    background: hsl(var(--card));
+  }
+  @media (min-width: 768px) {
+    .dashboard-workspace {
+      border: 1px solid hsl(var(--border));
+      box-shadow: var(--shadow-card);
+    }
+  }
 
   /* ── Sidebar active item — light blue bg, blue text/icon ────────────────── */
   .sidebar-active {
@@ -287,162 +285,4 @@
   .dark .table-row-hover:hover {
     background-color: hsl(222 35% 14%);
   }
-}
-
-/* =====================================================
-   LIQUID GLASS DESIGN SYSTEM
-=====================================================*/
-
-:root{
-    --glass-bg: rgba(255,255,255,.10);
-    --glass-bg-dark: rgba(17,24,39,.55);
-
-    --glass-border: rgba(255,255,255,.18);
-
-    --glass-shadow:
-        0 10px 40px rgba(15,23,42,.18);
-
-    --glass-hover:
-        rgba(255,255,255,.16);
-
-    --glass-active:
-        rgba(255,255,255,.24);
-
-    --glass-blur:28px;
-}
-
-/* Main glass container */
-
-.glass {
-  background: rgba(255,255,255,.72);
-  backdrop-filter: blur(28px) saturate(180%);
-  -webkit-backdrop-filter: blur(28px) saturate(180%);
-  border: 1px solid rgba(255,255,255,.18);
-
-  box-shadow:
-    inset 0 1px 1px rgba(255,255,255,.25),
-    0 10px 40px rgba(15,23,42,.18);
-
-  overflow: hidden;
-  position: relative;
-}
-
-.glass::before{
-    content:"";
-
-    position:absolute;
-
-    inset:0;
-
-    pointer-events:none;
-
-    background:
-    linear-gradient(
-        135deg,
-        rgba(255,255,255,.20),
-        rgba(255,255,255,0)
-    );
-
-    opacity:.8;
-}
-
-/* Dark mode */
-
-.dark .glass{
-
-    background: rgba(17,24,39,.55);
-
-}
-
-/* Navigation */
-
-.glass-nav{
-
-    transition:.25s;
-
-}
-
-.glass-nav:hover{
-
-    background:var(--glass-hover);
-
-}
-
-.glass-nav.active {
-    background: rgba(255,255,255,.18);
-    transition: all .25s ease;
-}
-
-/* ---------- LIGHT MODE ---------- */
-
-:root .glass-nav.active{
-    color: hsl(var(--primary));
-
-    background: rgba(47,128,237,.10);
-
-    border:1px solid rgba(47,128,237,.15);
-
-    box-shadow:
-        0 4px 16px rgba(47,128,237,.12);
-}
-
-:root .glass-nav.active svg{
-    color:hsl(var(--primary));
-}
-
-/* ---------- DARK MODE ---------- */
-
-.dark .glass-nav.active{
-
-    color:white;
-
-    background:rgba(255,255,255,.14);
-
-    border:1px solid rgba(255,255,255,.10);
-
-    box-shadow:
-        0 0 16px rgba(96,165,250,.18);
-}
-
-.dark .glass-nav.active svg{
-    color:white;
-}
-
-/* Login */
-
-.login-glass{
-    background:rgba(255,255,255,.12);
-
-    backdrop-filter:blur(30px) saturate(180%);
-
-    -webkit-backdrop-filter:blur(30px) saturate(180%);
-
-    border:1px solid rgba(255,255,255,.18);
-
-    box-shadow:
-        inset 0 1px 1px rgba(255,255,255,.22),
-        0 25px 70px rgba(0,0,0,.35);
-
-    position:relative;
-
-    overflow:hidden;
-}
-
-.login-glass::before{
-
-    content:"";
-
-    position:absolute;
-
-    inset:0;
-
-    background:
-    linear-gradient(
-        135deg,
-        rgba(255,255,255,.18),
-        transparent
-    );
-
-    pointer-events:none;
-
 }

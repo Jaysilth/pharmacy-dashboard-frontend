@@ -67,15 +67,12 @@ function NavLink({
       href={item.href}
       onClick={onClick}
       className={cn(
-  "glass-nav",
-  "flex items-center gap-3 px-3 py-2.5 rounded-xl",
-  "text-sm font-medium",
-  "transition-all duration-300",
-  "select-none",
-  isActive
-    ? "active"
-    : "text-sidebar-foreground/70 hover:text-sidebar-foreground"
-)}
+        "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium",
+        "transition-all duration-150 select-none",
+        isActive
+       ? "sidebar-active font-semibold"
+      : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground",
+      )}
     >
       <Icon className="h-4 w-4 flex-shrink-0" />
       {item.name}
@@ -120,20 +117,28 @@ function NavBody({
 
 function ThemeToggle({ compact = false }: { compact?: boolean }) {
   const { isDark, toggleTheme } = useTheme();
+
+  if (compact) {
+    return (
+      <button
+        onClick={toggleTheme}
+        className="p-2 rounded-xl transition-all duration-200 text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent active:scale-95"
+        aria-label="Toggle theme"
+      >
+        {isDark ? (
+          <Sun className="h-4 w-4 flex-shrink-0 text-amber-400" />
+        ) : (
+          <Moon className="h-4 w-4 flex-shrink-0" />
+        )}
+      </button>
+    );
+  }
+
+  // Secondary control — deliberately styled like the profile widget, not a nav link.
   return (
     <button
       onClick={toggleTheme}
-      className={cn(
-  "glass-nav",
-  "flex items-center gap-2 rounded-xl",
-  "transition-all duration-300",
-  "text-sidebar-foreground/70",
-  "hover:text-sidebar-foreground",
-  "active:scale-95",
-  compact
-    ? "p-2"
-    : "px-3 py-2 text-xs font-medium w-full"
-)}
+      className="flex items-center gap-2.5 w-full rounded-2xl border border-sidebar-border/70 bg-sidebar-accent/40 px-3.5 py-2.5 text-xs font-medium text-sidebar-foreground/70 transition-all duration-200 hover:bg-sidebar-accent hover:text-sidebar-foreground active:scale-[0.98]"
       aria-label="Toggle theme"
     >
       {isDark ? (
@@ -141,9 +146,7 @@ function ThemeToggle({ compact = false }: { compact?: boolean }) {
       ) : (
         <Moon className="h-4 w-4 flex-shrink-0" />
       )}
-      {!compact && (
-        <span>{isDark ? "Light mode" : "Dark mode"}</span>
-      )}
+      <span>{isDark ? "Light mode" : "Dark mode"}</span>
     </button>
   );
 }
@@ -178,47 +181,28 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   // ── Profile + logout section ──────────────────────────────────────────────
 
   const ProfileSection = ({ onLogout }: { onLogout: () => void }) => (
-    <div className="px-3 pb-4 space-y-1">
-      <div
-  className="
-    glass
-    flex
-    items-center
-    gap-3
-    px-3
-    py-2.5
-    rounded-xl
-  "
->
-        <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
+    <div className="px-3 pb-4 space-y-2.5">
+      {/* Profile — its own floating widget */}
+      <div className="flex items-center gap-3 rounded-2xl border border-sidebar-border/70 bg-sidebar-accent/60 px-3.5 py-3">
+        <div className="flex-shrink-0 w-9 h-9 rounded-full bg-primary/20 flex items-center justify-center">
           <User className="h-4 w-4 text-primary" />
         </div>
-        <div className="flex-1 min-w-0">
+        <div className="flex-1 min-w-0 space-y-0.5">
           <p className="text-xs font-semibold text-sidebar-foreground truncate">
             {displayName}
           </p>
           <p className="text-[10px] text-sidebar-foreground/50">{displayRole}</p>
         </div>
       </div>
+
       <ThemeToggle />
+
       <button
         onClick={onLogout}
-        className="
-glass-nav
-flex
-items-center
-gap-2
-w-full
-px-3
-py-2
-rounded-xl
-text-xs
-font-medium
-text-sidebar-foreground/70
-hover:text-destructive
-transition-all
-duration-300
-"
+        className="flex items-center gap-2 w-full px-3.5 py-2 rounded-xl text-xs font-medium
+          text-sidebar-foreground/70 hover:text-destructive hover:bg-destructive/10
+          transition-all duration-150"
+        data-testid="button-logout"
       >
         <LogOut className="h-4 w-4" />
         Sign out
@@ -227,27 +211,14 @@ duration-300
   );
 
   return (
-    <div className="h-screen overflow-hidden flex bg-background">
+    <div className="h-screen overflow-hidden flex gap-0 md:gap-4 p-0 md:p-4 dashboard-bg">
 
       {/* ══════════════════════════════════════════
-          DESKTOP SIDEBAR (hidden on mobile)
+          DESKTOP SIDEBAR (hidden on mobile) — floating glass panel
       ══════════════════════════════════════════ */}
-      <aside
-  className="
-    hidden
-    md:flex
-    w-[280px]
-    flex-col
-    flex-shrink-0
-    glass
-    relative
-    overflow-hidden
-    rounded-[30px]
-    m-4
-  "
-> 
+      <aside className="hidden md:flex w-[272px] flex-col flex-shrink-0 glass-panel relative overflow-hidden rounded-[28px]">
 
-        {/* Blueprint grid overlay (decorative)
+        {/* Blueprint grid overlay (decorative) */}
         <div
           className="pointer-events-none absolute inset-0 opacity-[0.03]"
           style={{
@@ -255,10 +226,10 @@ duration-300
               "linear-gradient(to right, currentColor 1px, transparent 1px), linear-gradient(to bottom, currentColor 1px, transparent 1px)",
             backgroundSize: "20px 20px",
           }}
-        /> */}
+        />
 
         {/* Logo */}
-        <div className="relative flex items-center gap-2.5 h-16 px-5 border-b border-sidebar-border flex-shrink-0">
+        <div className="relative flex items-center gap-2.5 h-16 px-5 border-b border-sidebar-border/70 flex-shrink-0">
           <Activity className="h-5 w-5 text-primary flex-shrink-0" />
           <div className="leading-none">
             <span className="text-sm font-black tracking-widest uppercase text-sidebar-foreground">
@@ -297,13 +268,13 @@ duration-300
 
       {/* Drawer panel */}
       <aside className={cn("fixed inset-y-0 left-0 z-50 w-[280px] flex flex-col md:hidden",
-          "bg-sidebar border-r border-sidebar-border",
+          "glass-panel rounded-none",
           "transition-transform duration-300 ease-in-out",
           drawerOpen ? "translate-x-0" : "-translate-x-full",
         )}
       >
         {/* Drawer header */}
-        <div className="flex items-center justify-between h-16 px-5 border-b border-sidebar-border flex-shrink-0">
+        <div className="flex items-center justify-between h-16 px-5 border-b border-sidebar-border/70 flex-shrink-0">
           <div className="flex items-center gap-2.5">
             <Activity className="h-5 w-5 text-primary" />
             <div className="leading-none">
@@ -337,9 +308,9 @@ duration-300
       </aside>
 
       {/* ══════════════════════════════════════════
-          MAIN CONTENT AREA
+          MAIN CONTENT AREA — floating white workspace (Layer 3)
       ══════════════════════════════════════════ */}
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 dashboard-workspace md:rounded-[28px] md:overflow-hidden">
 
         {/* ── Mobile top header ── */}
         <header
@@ -369,7 +340,7 @@ duration-300
 
         {/* ── Page content ── */}
         <main className="flex-1 overflow-auto">
-          <div className="p-4 sm:p-6 lg:p-8 max-w-[1400px] mx-auto">
+          <div className="p-4 sm:p-6 lg:p-9 max-w-[1400px] mx-auto">
             {children}
           </div>
         </main>
