@@ -221,15 +221,7 @@ export default function Layout({ children }: { children?: ReactNode }) {
       ══════════════════════════════════════════ */}
       <aside className="hidden md:flex w-[272px] flex-col flex-shrink-0 glass-panel relative overflow-hidden rounded-[28px]">
 
-        {/* Blueprint grid overlay (decorative)
-        <div
-          className="pointer-events-none absolute inset-0 opacity-[0.03]"
-          style={{
-            backgroundImage:
-              "linear-gradient(to right, currentColor 1px, transparent 1px), linear-gradient(to bottom, currentColor 1px, transparent 1px)",
-            backgroundSize: "20px 20px",
-          }}
-        /> */}
+       
 
         {/* Logo */}
         <div className="relative flex items-center gap-2.5 h-16 px-5 border-b border-sidebar-border/70 flex-shrink-0">
