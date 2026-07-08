@@ -17,6 +17,7 @@ import type {
   BatchCheckResult,Consumable,
   ConsumableInput, ConsumableUsageInput,
   ConsumableUsageRecord,
+  Iol, IolInput, IolUsageInput, IolUsageRecord,
 } from "@/types/api";
 
 // ── Query key factories ──────────────────────────────────────────────────────
@@ -284,5 +285,71 @@ export function useDeleteConsumableUsage() {
     mutationFn: (usageId: number) =>
       apiRequest<void>(`/api/consumables/usage/${usageId}`, { method: "DELETE" }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["consumables"] }),
+  });
+}
+
+// ── IOLs ─────────────────────────────────────────────────────────────────────
+
+export function useGetIols(
+  params?: { search?: string },
+  options?: Omit<UseQueryOptions<Iol[]>, "queryKey" | "queryFn">,
+) {
+  const q = params?.search ? `?search=${encodeURIComponent(params.search)}` : "";
+  return useQuery<Iol[]>({
+    queryKey: ["iols", params ?? {}],
+    queryFn: () => apiRequest<Iol[]>(`/api/iols${q}`),
+    ...options,
+  });
+}
+
+export function useCreateIol() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (d: IolInput) =>
+      apiRequest<Iol>("/api/iols", { method: "POST", body: d }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["iols"] }),
+  });
+}
+
+export function useUpdateIol() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: number; data: IolInput }) =>
+      apiRequest<Iol>(`/api/iols/${id}`, { method: "PUT", body: data }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["iols"] }),
+  });
+}
+
+export function useDeleteIol() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) =>
+      apiRequest<void>(`/api/iols/${id}`, { method: "DELETE" }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["iols"] }),
+  });
+}
+
+export function useRecordIolUsage() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (d: IolUsageInput) =>
+      apiRequest<IolUsageRecord>("/api/iols/usage", { method: "POST", body: d }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["iols"] }),
+  });
+}
+
+export function useGetIolUsage() {
+  return useQuery<IolUsageRecord[]>({
+    queryKey: ["iols", "usage"],
+    queryFn: () => apiRequest<IolUsageRecord[]>("/api/iols/usage"),
+  });
+}
+
+export function useDeleteIolUsage() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (usageId: number) =>
+      apiRequest<void>(`/api/iols/usage/${usageId}`, { method: "DELETE" }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["iols"] }),
   });
 }

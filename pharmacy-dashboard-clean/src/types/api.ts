@@ -262,3 +262,56 @@ export interface ConsumableUsageRecord {
   procedureRef?: string;
   labTestRef?: string;
 }
+
+// ── IOLs (Intraocular Lenses) ───────────────────────────────────────────────
+// Separate from Consumable: stock is tracked per (name, type, power), not per
+// name+unit, and usage is always surgery-linked (cataract implant) — no
+// procedure/lab-test linking like general consumables.
+
+export type IolType = "RIGID" | "FOLDABLE";
+
+export interface Iol {
+  id: number;
+  name: string;
+  type: IolType;
+  power: number;
+  manufacturer?: string;
+  description?: string;
+  quantityInStock: number;
+  reorderLevel: number;
+  lowStock: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface IolInput {
+  name: string;
+  type: IolType;
+  power: number;
+  manufacturer?: string;
+  description?: string;
+  quantityInStock: number;
+  reorderLevel?: number;
+}
+
+export interface IolUsageInput {
+  iolId: number;
+  quantityUsed: number;
+  surgeryId: number;
+  usedBy?: string;
+  notes?: string;
+}
+
+export interface IolUsageRecord {
+  id: number;
+  iolId: number;
+  iolName: string;
+  iolPower: number;
+  quantityUsed: number;
+  surgeryId: number;
+  surgeryName: string;
+  usedBy?: string;
+  notes?: string;
+  usedAt: string;
+}
+

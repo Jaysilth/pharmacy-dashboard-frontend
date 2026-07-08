@@ -10,6 +10,10 @@ import {
   useDeleteConsumable,
   useGetConsumableUsage,
   useDeleteConsumableUsage,
+  useGetIols,
+  useDeleteIol,
+  useGetIolUsage,
+  useDeleteIolUsage,
 } from "@/lib/queries";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
@@ -36,11 +40,13 @@ import {
   Form, FormControl, FormField, FormItem, FormLabel, FormMessage,
 } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Edit, Trash2, Search, Package, History } from "lucide-react";
+import { Plus, Edit, Trash2, Search, Package, History, Syringe } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import { IolModal } from "@/components/IolModal";
+import { IolUsageModal } from "@/components/IolUsageModal";
 
-type PageTab = "STOCK" | "USAGE_LOG";
+type PageTab = "STOCK" | "USAGE_LOG" | "IOL" | "IOL_USAGE";
 
 const schema = z.object({
   name:            z.string().min(1, "Name is required"),
@@ -183,8 +189,16 @@ export default function ConsumablesPage() {
 
   const { data: usageLog, isLoading: loadingLog } = useGetConsumableUsage();
 
+  const { data: iols, isLoading: loadingIols } = useGetIols(
+    { search: search || undefined },
+    { enabled: activeTab === "IOL" },
+  );
+  const { data: iolUsageLog, isLoading: loadingIolLog } = useGetIolUsage();
+
   const deleteConsumable = useDeleteConsumable();
   const deleteUsage = useDeleteConsumableUsage();
+  const deleteIol = useDeleteIol();
+  const deleteIolUsage = useDeleteIolUsage();
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto px-4">
@@ -199,13 +213,17 @@ export default function ConsumablesPage() {
         </div>
 
         {activeTab === "STOCK" && <ConsumableModal />}
+        {activeTab === "IOL" && <IolModal />}
+        {activeTab === "IOL_USAGE" && <IolUsageModal />}
       </div>
 
       {/* TABS */}
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2">
         {[
           { value: "STOCK", label: "Stock", icon: Package },
           { value: "USAGE_LOG", label: "Usage Log", icon: History },
+          { value: "IOL", label: "IOLs", icon: Package },
+          { value: "IOL_USAGE", label: "IOL Usage", icon: Syringe },
         ].map((t) => (
           <button
             key={t.value}
@@ -226,14 +244,14 @@ export default function ConsumablesPage() {
       <Card className="shadow-sm border-border overflow-hidden">
 
         {/* SEARCH */}
-        {activeTab === "STOCK" && (
+        {(activeTab === "STOCK" || activeTab === "IOL") && (
           <CardHeader className="py-3 px-4 border-b bg-muted/30">
             <div className="flex items-center justify-between">
               <div className="relative w-full max-w-sm">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                   className="pl-9"
-                  placeholder="Search consumables…"
+                  placeholder={activeTab === "IOL" ? "Search IOLs…" : "Search consumables…"}
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                 />
@@ -481,6 +499,212 @@ export default function ConsumablesPage() {
                         className="h-32 text-center text-muted-foreground"
                       >
                         No usage recorded yet.
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </>
+            )}
+
+            {/* ================= IOL STOCK TAB ================= */}
+            {activeTab === "IOL" && (
+              <>
+                <TableHeader className="bg-muted/40">
+                  <TableRow>
+                    <TableHead className="pl-6">Name</TableHead>
+                    <TableHead>Type</TableHead>
+                    <TableHead className="text-right">Power (D)</TableHead>
+                    <TableHead>Manufacturer</TableHead>
+                    <TableHead className="text-right">In Stock</TableHead>
+                    <TableHead className="text-right">Reorder At</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right pr-6">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+
+                <TableBody>
+                  {loadingIols ? (
+                    Array.from({ length: 5 }).map((_, i) => (
+                      <TableRow key={i} className="h-14">
+                        {Array.from({ length: 8 }).map((__, j) => (
+                          <TableCell key={j}>
+                            <Skeleton className="h-5 w-full" />
+                          </TableCell>
+                        ))}
+                      </TableRow>
+                    ))
+                  ) : iols && iols.length > 0 ? (
+                    iols.map((i) => (
+                      <TableRow
+                        key={i.id}
+                        className="hover:bg-muted/10 h-14 [&>td]:align-middle"
+                      >
+                        <TableCell className="pl-6 font-medium">{i.name}</TableCell>
+
+                        <TableCell>
+                          <Badge variant="outline">
+                            {i.type === "RIGID" ? "Rigid" : "Foldable"}
+                          </Badge>
+                        </TableCell>
+
+                        <TableCell className="text-right font-mono tabular-nums">
+                          {i.power.toFixed(2)}
+                        </TableCell>
+
+                        <TableCell className="text-muted-foreground">
+                          {i.manufacturer || "—"}
+                        </TableCell>
+
+                        <TableCell className="text-right font-mono tabular-nums font-semibold">
+                          {i.quantityInStock}
+                        </TableCell>
+
+                        <TableCell className="text-right font-mono tabular-nums text-muted-foreground">
+                          {i.reorderLevel}
+                        </TableCell>
+
+                        <TableCell>
+                          {i.lowStock ? (
+                            <Badge variant="destructive">Low Stock</Badge>
+                          ) : (
+                            <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
+                              OK
+                            </Badge>
+                          )}
+                        </TableCell>
+
+                        <TableCell className="text-right pr-6">
+                          {isSuperAdmin ? (
+                            <div className="flex justify-end items-center gap-2">
+                              <IolModal
+                                item={i}
+                                trigger={
+                                  <Button variant="ghost" size="icon">
+                                    <Edit className="h-4 w-4 text-muted-foreground" />
+                                  </Button>
+                                }
+                              />
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <Button variant="ghost" size="icon" className="text-destructive hover:bg-destructive/10">
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>
+                                      Delete {i.name} ({i.power}D)?
+                                    </AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      This removes this IOL stock row and its usage history. Cannot be undone.
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                    <AlertDialogAction
+                                      onClick={() =>
+                                        deleteIol.mutate(i.id, {
+                                          onSuccess: () => toast({ title: `${i.name} deleted.` }),
+                                          onError: (e) => toast({
+                                            title: "Delete failed",
+                                            description: e instanceof ApiError ? e.message : String(e),
+                                            variant: "destructive",
+                                          }),
+                                        })
+                                      }
+                                      className="bg-destructive text-destructive-foreground"
+                                    >
+                                      Delete
+                                    </AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
+                            </div>
+                          ) : (
+                            <span className="text-muted-foreground text-sm">—</span>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={8} className="h-32 text-center text-muted-foreground">
+                        {search ? `No IOLs matching "${search}".` : "No IOLs in stock yet."}
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </>
+            )}
+
+            {/* ================= IOL USAGE LOG TAB ================= */}
+            {activeTab === "IOL_USAGE" && (
+              <>
+                <TableHeader className="bg-muted/40">
+                  <TableRow>
+                    <TableHead className="pl-6">IOL</TableHead>
+                    <TableHead className="text-right">Power (D)</TableHead>
+                    <TableHead className="text-right">Qty Used</TableHead>
+                    <TableHead>Surgery</TableHead>
+                    <TableHead>Used By</TableHead>
+                    <TableHead>Notes</TableHead>
+                    <TableHead>Date</TableHead>
+                    <TableHead className="text-right pr-6">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+
+                <TableBody>
+                  {loadingIolLog ? (
+                    Array.from({ length: 5 }).map((_, i) => (
+                      <TableRow key={i} className="h-14">
+                        {Array.from({ length: 8 }).map((__, j) => (
+                          <TableCell key={j}>
+                            <Skeleton className="h-5 w-full" />
+                          </TableCell>
+                        ))}
+                      </TableRow>
+                    ))
+                  ) : iolUsageLog && iolUsageLog.length > 0 ? (
+                    iolUsageLog.map((u) => (
+                      <TableRow key={u.id} className="hover:bg-muted/10 h-14 [&>td]:align-middle">
+                        <TableCell className="pl-6 font-medium">{u.iolName}</TableCell>
+                        <TableCell className="text-right font-mono tabular-nums">{u.iolPower.toFixed(2)}</TableCell>
+                        <TableCell className="text-right font-mono tabular-nums font-semibold">{u.quantityUsed}</TableCell>
+                        <TableCell className="text-muted-foreground">{u.surgeryName}</TableCell>
+                        <TableCell className="text-muted-foreground">{u.usedBy || "—"}</TableCell>
+                        <TableCell className="text-muted-foreground text-sm truncate max-w-[140px]">{u.notes || "—"}</TableCell>
+                        <TableCell className="text-muted-foreground text-sm">
+                          {format(new Date(u.usedAt), "dd MMM yyyy")}
+                        </TableCell>
+                        <TableCell className="text-right pr-6">
+                          {isSuperAdmin ? (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="text-destructive"
+                              onClick={() =>
+                                deleteIolUsage.mutate(u.id, {
+                                  onSuccess: () => toast({ title: "Usage entry deleted." }),
+                                  onError: (e) => toast({
+                                    title: "Delete failed",
+                                    description: e instanceof ApiError ? e.message : String(e),
+                                    variant: "destructive",
+                                  }),
+                                })
+                              }
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          ) : (
+                            "—"
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={8} className="h-32 text-center text-muted-foreground">
+                        No IOL usage recorded yet.
                       </TableCell>
                     </TableRow>
                   )}
