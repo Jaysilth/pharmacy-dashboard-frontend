@@ -200,6 +200,7 @@ export default function Layout({ children }: { children?: ReactNode }) {
       <ThemeToggle />
 
       <button
+        type="button"
         onClick={onLogout}
         className="flex items-center gap-2 w-full px-3.5 py-2 rounded-xl text-xs font-medium
           text-sidebar-foreground/70 hover:text-destructive hover:bg-destructive/10

@@ -103,17 +103,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const isSuperAdmin =
     currentUser?.roles?.includes("ROLE_SUPER_ADMIN") ?? false;
 
-  // Refs for the inactivity timer and throttle timestamp.
+  // Refs for the inactivity timer, throttle timestamp, and profile fetch tracking.
   // Using refs (not state) because changing them must never trigger re-renders.
-  const inactivityTimerRef  = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const inactivityTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastResetTimestampRef = useRef<number>(0);
+  const profileRequestIdRef = useRef(0);
 
   // ── Core auth actions ──────────────────────────────────────────────────────
 
   const logout = useCallback(() => {
+    profileRequestIdRef.current += 1;
     clearToken();
     setCurrentUser(null);
     setIsAuthenticated(false);
+
+    if (window.location.pathname !== "/login") {
+      window.location.replace("/login");
+    }
   }, []);
 
   const logoutWithSessionExpiredMessage = useCallback(() => {
@@ -129,11 +135,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [logout]);
 
   const loadFullProfile = useCallback(async () => {
+    const requestId = profileRequestIdRef.current + 1;
+    profileRequestIdRef.current = requestId;
+
     try {
       const profile = await apiRequest<UserProfile>("/api/auth/me");
-      setCurrentUser(profile);
+      if (requestId === profileRequestIdRef.current) {
+        setCurrentUser(profile);
+      }
     } catch (err) {
-      if (err instanceof ApiError && err.status === 401) {
+      if (
+        requestId === profileRequestIdRef.current &&
+        err instanceof ApiError &&
+        err.status === 401
+      ) {
         logout();
       }
     }
