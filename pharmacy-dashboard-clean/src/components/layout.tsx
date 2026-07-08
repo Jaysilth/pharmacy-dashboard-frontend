@@ -153,7 +153,9 @@ function ThemeToggle({ compact = false }: { compact?: boolean }) {
 
 // ── Main Layout ───────────────────────────────────────────────────────────────
 
-export default function Layout({ children }: { children: React.ReactNode }) {
+import { ReactNode } from "react";
+
+export default function Layout({ children }: { children?: ReactNode }) {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const { logout, currentUser, isSuperAdmin } = useAuth();
   const [location] = useLocation();
