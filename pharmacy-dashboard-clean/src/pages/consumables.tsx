@@ -45,6 +45,7 @@ import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { IolModal } from "@/components/IolModal";
 import { IolUsageModal } from "@/components/IolUsageModal";
+import { ConsumableUsageModal } from "@/components/ConsumableUsageModal";
 
 type PageTab = "STOCK" | "USAGE_LOG" | "IOL" | "IOL_USAGE";
 
@@ -213,6 +214,7 @@ export default function ConsumablesPage() {
         </div>
 
         {activeTab === "STOCK" && <ConsumableModal />}
+        {activeTab === "USAGE_LOG" && <ConsumableUsageModal />}
         {activeTab === "IOL" && <IolModal />}
         {activeTab === "IOL_USAGE" && <IolUsageModal />}
       </div>
