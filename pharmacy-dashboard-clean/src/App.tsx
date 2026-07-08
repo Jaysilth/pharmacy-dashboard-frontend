@@ -28,8 +28,26 @@ const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1, staleTime: 30_000 } },
 });
 
+// ── Route-level guards ──────────────────────────────────────────────────────
+// Each of these used to be passed as inline JSX `children` to <Route>, e.g.
+//   <Route path="/login">{isAuthenticated ? <Redirect .../> : <Login />}</Route>
+// That shape hits a stricter overload in current @types/react (children vs.
+// component prop) and fails `tsc` even though it renders fine in the browser.
+// Passing them via `component={...}` instead sidesteps the overload entirely
+// and is the pattern wouter's own docs use for conditional routes.
+
+function LoginRoute() {
+  const { isAuthenticated } = useAuth();
+  return isAuthenticated ? <Redirect to="/" /> : <Login />;
+}
+
+function UsersRoute() {
+  const { isSuperAdmin } = useAuth();
+  return isSuperAdmin ? <UsersPage /> : <Redirect to="/" />;
+}
+
 function ProtectedRoutes() {
-  const { isAuthenticated, isSuperAdmin } = useAuth();
+  const { isAuthenticated } = useAuth();
   if (!isAuthenticated) return <Redirect to="/login" />;
   return (
     <Layout>
@@ -39,16 +57,14 @@ function ProtectedRoutes() {
         <Route path="/medicines/:id"  component={MedicineDetail} />
         <Route path="/glasses"        component={GlassesPage} />
         <Route path="/surgeries"      component={SurgeriesPage} />
-        <Route path="/consumables" component={ConsumablesPage} />
+        <Route path="/consumables"    component={ConsumablesPage} />
         <Route path="/clinic-visits"  component={ClinicVisitsPage} />
         <Route path="/procedures"     component={ProceduresPage} />
         <Route path="/lab-tests"      component={LabTestsPage} />
         <Route path="/sales/new"      component={NewSale} />
         <Route path="/sales/:id"      component={SaleDetail} />
         <Route path="/sales"          component={Sales} />
-        <Route path="/users">
-          {isSuperAdmin ? <UsersPage /> : <Redirect to="/" />}
-        </Route>
+        <Route path="/users"          component={UsersRoute} />
         <Route component={NotFound} />
       </Switch>
     </Layout>
@@ -56,13 +72,10 @@ function ProtectedRoutes() {
 }
 
 function Router() {
-  const { isAuthenticated } = useAuth();
   return (
     <Switch>
-      <Route path="/login">
-        {isAuthenticated ? <Redirect to="/" /> : <Login />}
-      </Route>
-      <Route><ProtectedRoutes /></Route>
+      <Route path="/login" component={LoginRoute} />
+      <Route component={ProtectedRoutes} />
     </Switch>
   );
 }
