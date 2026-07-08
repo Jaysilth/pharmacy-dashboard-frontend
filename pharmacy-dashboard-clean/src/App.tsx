@@ -48,27 +48,27 @@ function UsersRoute() {
 
 function ProtectedRoutes() {
   const { isAuthenticated } = useAuth();
+
   if (!isAuthenticated) return <Redirect to="/login" />;
+
   return (
     <Layout>
       <Switch>
-  <>
-    <Route path="/" component={Dashboard} />
-    <Route path="/medicines" component={Medicines} />
-    <Route path="/medicines/:id" component={MedicineDetail} />
-    <Route path="/glasses" component={GlassesPage} />
-    <Route path="/surgeries" component={SurgeriesPage} />
-    <Route path="/consumables" component={ConsumablesPage} />
-    <Route path="/clinic-visits" component={ClinicVisitsPage} />
-    <Route path="/procedures" component={ProceduresPage} />
-    <Route path="/lab-tests" component={LabTestsPage} />
-    <Route path="/sales/new" component={NewSale} />
-    <Route path="/sales/:id" component={SaleDetail} />
-    <Route path="/sales" component={Sales} />
-    <Route path="/users" component={UsersRoute} />
-    <Route component={NotFound} />
-  </>
-</Switch>
+        <Route path="/" component={Dashboard} />
+        <Route path="/medicines" component={Medicines} />
+        <Route path="/medicines/:id" component={MedicineDetail} />
+        <Route path="/glasses" component={GlassesPage} />
+        <Route path="/surgeries" component={SurgeriesPage} />
+        <Route path="/consumables" component={ConsumablesPage} />
+        <Route path="/clinic-visits" component={ClinicVisitsPage} />
+        <Route path="/procedures" component={ProceduresPage} />
+        <Route path="/lab-tests" component={LabTestsPage} />
+        <Route path="/sales/new" component={NewSale} />
+        <Route path="/sales/:id" component={SaleDetail} />
+        <Route path="/sales" component={Sales} />
+        <Route path="/users" component={UsersRoute} />
+        <Route component={NotFound} />
+      </Switch>
     </Layout>
   );
 }
