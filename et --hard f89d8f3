@@ -1,4 +1,5 @@
-[33m00f5806[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmaster[m[33m, [m[1;31morigin/master[m[33m)[m feat: update routing structure for improved readability and flexibility
+[33me629ba4[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmaster[m[33m, [m[1;31morigin/master[m[33m)[m resetting to last working commit
+[33m00f5806[m feat: update routing structure for improved readability and flexibility
 [33mad4cbb2[m feat: allow optional children prop in Layout component for improved flexibility
 [33m2c13ece[m feat: refactor route handling to use component prop for conditional rendering
 [33m75c182f[m Refactor dashboard and login components for improved styling and structure
