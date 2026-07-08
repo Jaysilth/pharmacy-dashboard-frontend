@@ -44,7 +44,7 @@ function StatCard({
 }) {
   return (
     <div
-      className="card-lift bg-card rounded-2xl p-6 flex flex-col gap-5 border border-border"
+      className="card-lift bg-card rounded-2xl p-6 flex flex-col gap-4 border border-border"
       data-testid={testid}
     >
       <div className="flex items-start justify-between">
@@ -168,7 +168,7 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
 
         {/* Revenue area chart */}
-        <div className="lg:col-span-2 bg-card rounded-2xl border border-border card-lift p-6 lg:p-7">
+        <div className="lg:col-span-2 bg-card rounded-2xl border border-border card-lift p-6">
           <div className="flex items-center justify-between mb-6">
             <div>
               <h2 className="text-sm font-semibold text-foreground">Revenue Overview</h2>
@@ -247,7 +247,7 @@ export default function Dashboard() {
 
           {/* Low stock */}
           <div className="bg-card rounded-2xl border border-border card-lift p-5 flex-1">
-            <div className="flex items-center gap-2 mb-3.5">
+            <div className="flex items-center gap-2 mb-3">
               <div className="p-1.5 rounded-lg bg-[#EB5757]/10">
                 <AlertTriangle className="h-4 w-4 text-[#EB5757]" strokeWidth={1.8} />
               </div>
@@ -277,7 +277,7 @@ export default function Dashboard() {
 
           {/* Expiring soon */}
           <div className="bg-card rounded-2xl border border-border card-lift p-5 flex-1">
-            <div className="flex items-center gap-2 mb-3.5">
+            <div className="flex items-center gap-2 mb-3">
               <div className="p-1.5 rounded-lg bg-[#F2C94C]/15">
                 <Clock className="h-4 w-4 text-amber-600" strokeWidth={1.8} />
               </div>
@@ -340,7 +340,7 @@ export default function Dashboard() {
               return (
                 <div
                   key={sale.id}
-                  className="flex justify-between items-center py-3.5 first:pt-0 last:pb-0"
+                  className="flex justify-between items-center py-3 first:pt-0 last:pb-0"
                   data-testid={`recent-sale-${sale.id}`}
                 >
                   <div className="min-w-0 flex-1">
