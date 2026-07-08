@@ -1,0 +1,46 @@
+[33m00f5806[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmaster[m[33m, [m[1;31morigin/master[m[33m)[m feat: update routing structure for improved readability and flexibility
+[33mad4cbb2[m feat: allow optional children prop in Layout component for improved flexibility
+[33m2c13ece[m feat: refactor route handling to use component prop for conditional rendering
+[33m75c182f[m Refactor dashboard and login components for improved styling and structure
+[33mf89d8f3[m feat: comment out blueprint grid overlay in layout and login components for clarity
+[33m300155e[m feat: enhance glass component styles for light and dark modes with improved active state visuals
+[33mca7a7a7[m feat: enhance card lift effect with improved hover animations and dark mode support
+[33m853dfb4[m feat: implement liquid glass design system and enhance login page aestheticsgpt
+[33m8a924cc[m feat: update dashboard layout with area chart and enhance stat card design
+[33m909bea8[m fix: update button label and description for glasses fixing services
+[33m339bfd2[m fix: update label for SYRUP category to Ointment in medicines and medicine form modal
+[33m738d671[m fix: adjust layout height for better display and add redirect configuration
+[33mddec0d8[m feat: enhance consumables page layout and improve search functionality
+[33m005c741[m fix: remove super admin restriction for ConsumableModal display in consumables tab
+[33mf22b96d[m feat: add delete functionality for consumable usage entries and restrict actions to super admins
+[33mb6f176f[m feat: add expandable rows for consumable usage tracking in lab tests, procedures, and surgeries pages
+[33m19c36f2[m feat: add consumables management page with CRUD operations and usage tracking
+[33mf9a5b87[m removing the claude path
+[33m42372cf[m git ignore changes to .claude/settings.local.json and pharmacy-dashboard-clean/.gitignore
+[33mf3f9020[m feat: add pagination and sorting functionality to glasses, accessories, and repairs tabs
+[33m8f1dab5[m feat: implement sales management page with search, list view, and conditional delete permissions
+[33m0111fc3[m feat: implement CRUD interfaces for glasses, accessories, and repairs in new dashboard page and API types
+[33m1835920[m added discount to the sale detail page and added a summary.md file to the root of the project
+[33m4d0cc54[m fixed the batching at frontend v2
+[33m51d3ba1[m added batching to medicine
+[33m5806103[m added light and dark mode, and making the ui compatible with mobile devices.
+[33m3cd4c03[m saved login.tsx this is 3rd commit after inactivity, should code be broken
+[33m0965fdc[m added image folder and image to the directory, and updated the import path in login.tsx to use the new image.
+[33mca2d746[m adjusted the image for the login page to match the new image added in the assets/images folder.
+[33mc1aae39[m made changes to ui of login page and added image for doctor in assets/images folder
+[33m666eed5[m added inactivity logout session timeout to 60 minutes
+[33m24783db[m solved import issues in queries.ts
+[33m529201b[m added glaases accessory and repairs to code
+[33m8167af1[m adding categories for medicines and updating the medicine form modal to include a category selection
+[33mcaa3a67[m added sale deletion
+[33mc952db5[m modified and added new changes to the pharmacy dashboard application, including updates to the App component, layout, queries, and various pages such as dashboard, glasses, medicine detail, new sale, sales, and surgeries. Additionally, changes were made to the API types to support new features and functionality.
+[33m85ead8b[m fixing auth again
+[33m8f3ec33[m fix authentication context to handle user state correctly and ensure proper login/logout functionality. Updated the AuthContext.tsx file to include necessary state management and error handling for authentication processes.
+[33mfec208a[m adjusting frontend to use new api endpoints
+[33m21bbb48[m button change to sort medicine duplication
+[33m4e06921[m adjusting the duplicate name of the medicine in the form modal to avoid confusion with the existing medicine name in the database.
+[33m7fab12e[m edited dashboard to have 2 columns on large screens, and sales and medicines pages to have a responsive layout with proper spacing and alignment. Also updated the API client to use the base URL from environment variables.
+[33mec66761[m adjusted base url to be more flexible and work with different environments.
+[33mf59528c[m added Dockerfile
+[33mf1f5b8f[m added a back button to the sales page and added a new sale button to the medicines page
+[33m195d1e8[m full commit
