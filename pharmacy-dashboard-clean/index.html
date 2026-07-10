@@ -3,6 +3,16 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!--
+      SECURITY FIX: previously no CSP at all. This is a meta-tag CSP, which
+      is a floor, not a ceiling — a header-based CSP set by your server/CDN
+      (Render static site headers, or reverse proxy) is stronger because it
+      can't be stripped by anything that manipulates the HTML.
+      IMPORTANT: replace the placeholder in connect-src below with your real
+      backend origin (e.g. https://your-api.onrender.com) or requests to the
+      API will be blocked.
+    --><meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' https://pharmacy-management-wamg.onrender.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self';" />
+    
     <title>JotessEyeSpecialist Dashboard</title>
     <meta name="description" content="JotessEyeSpecialist — Pharmacy Management Dashboard" />
     <meta name="robots" content="index, follow" />

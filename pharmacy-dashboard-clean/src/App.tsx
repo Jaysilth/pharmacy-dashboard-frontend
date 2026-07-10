@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { Switch, Route, Router as WouterRouter, Redirect } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -36,9 +37,25 @@ const queryClient = new QueryClient({
 // Passing them via `component={...}` instead sidesteps the overload entirely
 // and is the pattern wouter's own docs use for conditional routes.
 
+// SECURITY FIX: previously these routes gated purely on token *presence*
+// (isAuthenticated), so a stale/invalid token in localStorage would let
+// protected UI render for one tick before the backend's 401 forced a
+// logout. isValidating covers that in-flight window with a neutral
+// loading state instead of showing protected content or bouncing the
+// user around.
+function AuthGate({ children }: { children: ReactNode }) {
+  const { isValidating } = useAuth();
+  if (isValidating) return null; // could be replaced with a spinner
+  return <>{children}</>;
+}
+
 function LoginRoute() {
   const { isAuthenticated } = useAuth();
-  return isAuthenticated ? <Redirect to="/" /> : <Login />;
+  return (
+    <AuthGate>
+      {isAuthenticated ? <Redirect to="/" /> : <Login />}
+    </AuthGate>
+  );
 }
 
 function UsersRoute() {
@@ -47,8 +64,9 @@ function UsersRoute() {
 }
 
 function ProtectedRoutes() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isValidating } = useAuth();
 
+  if (isValidating) return null; // could be replaced with a spinner
   if (!isAuthenticated) return <Redirect to="/login" />;
 
   return (

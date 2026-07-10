@@ -49,6 +49,11 @@ const ACTIVITY_EVENTS: (keyof WindowEventMap)[] = [
 
 interface AuthContextValue {
   isAuthenticated: boolean;
+  // SECURITY FIX: isAuthenticated was set from token *presence* alone, so
+  // protected UI could briefly render before the backend confirmed the
+  // token was actually valid. isValidating exposes that in-flight check so
+  // callers (see App.tsx) can hold off rendering until it resolves.
+  isValidating: boolean;
   currentUser: UserProfile | null;
   isSuperAdmin: boolean;
   login: (token: string) => void;
@@ -95,6 +100,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(
     () => !!getToken(),
   );
+  // Starts true only when there's a persisted token to confirm; if there's
+  // no token at all, there's nothing to validate.
+  const [isValidating, setIsValidating] = useState<boolean>(() => !!getToken());
   const [currentUser, setCurrentUser] = useState<UserProfile | null>(() => {
     const token = getToken();
     return token ? profileFromToken(token) : null;
@@ -116,6 +124,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     clearToken();
     setCurrentUser(null);
     setIsAuthenticated(false);
+    setIsValidating(false);
 
     if (window.location.pathname !== "/login") {
       window.location.replace("/login");
@@ -150,6 +159,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         err.status === 401
       ) {
         logout();
+      }
+    } finally {
+      if (requestId === profileRequestIdRef.current) {
+        setIsValidating(false);
       }
     }
   }, [logout]);
@@ -264,7 +277,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return (
     <AuthContext.Provider
-      value={{ isAuthenticated, currentUser, isSuperAdmin, login, logout }}
+      value={{ isAuthenticated, isValidating, currentUser, isSuperAdmin, login, logout }}
     >
       {children}
     </AuthContext.Provider>
