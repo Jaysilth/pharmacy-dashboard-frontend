@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useLocation } from "wouter";
 import {
   Activity, LayoutDashboard, Pill, Glasses, Stethoscope,
-  Calendar, FileText, FlaskConical, Receipt, PlusCircle,
+  Calendar, FileText, FlaskConical, Receipt, TrendingUp,
   Users, LogOut, User, Menu, X, Sun, Moon,Package,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -40,7 +40,7 @@ const NAV_GROUPS = [
     label: "Sales",
     items: [
       { name: "Sales Log",  href: "/sales",       icon: Receipt },
-      { name: "New Sale",   href: "/sales/new",   icon: PlusCircle },
+      { name: "Revenue",    href: "/revenue",     icon: TrendingUp },
     ],
   },
 ];

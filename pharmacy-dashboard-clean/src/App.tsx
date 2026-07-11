@@ -20,6 +20,7 @@ import ProceduresPage from "@/pages/procedures";
 import LabTestsPage from "@/pages/lab-tests";
 import Sales from "@/pages/sales";
 import NewSale from "@/pages/new-sale";
+import Revenue from "@/pages/revenue";
 import SaleDetail from "@/pages/sale-detail";
 import UsersPage from "@/pages/users";
 import NotFound from "@/pages/not-found";
@@ -84,6 +85,7 @@ function ProtectedRoutes() {
         <Route path="/sales/new" component={NewSale} />
         <Route path="/sales/:id" component={SaleDetail} />
         <Route path="/sales" component={Sales} />
+        <Route path="/revenue" component={Revenue} />
         <Route path="/users" component={UsersRoute} />
         <Route component={NotFound} />
       </Switch>

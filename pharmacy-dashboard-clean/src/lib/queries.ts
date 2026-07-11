@@ -31,6 +31,7 @@ export const QK = {
   sales:               () => ["sales"],
   dashboardSummary:    () => ["dashboard", "summary"],
   salesByDay:          () => ["dashboard", "sales-by-day"],
+  revenueByPeriod:     (period: string, count: number) => ["dashboard", "revenue", period, count],
   lowStockMedicines:   () => ["dashboard", "low-stock"],
   expiringSoonMedicines: () => ["dashboard", "expiring-soon"],
   recentSales:         () => ["dashboard", "recent-sales"],
@@ -137,6 +138,15 @@ export interface DashboardSummary { totalMedicines: number; totalSalesToday: num
 export interface SalesByDay { date: string; totalRevenue: number; }
 export function useGetDashboardSummary() { return useQuery<DashboardSummary>({ queryKey: QK.dashboardSummary(), queryFn: () => apiRequest<DashboardSummary>("/api/dashboard/summary") }); }
 export function useGetSalesByDay() { return useQuery<SalesByDay[]>({ queryKey: QK.salesByDay(), queryFn: () => apiRequest<SalesByDay[]>("/api/dashboard/sales-by-day") }); }
+
+export type RevenuePeriod = "week" | "month" | "year";
+export interface RevenueByPeriod { label: string; periodStart: string; periodEnd: string; totalRevenue: number; }
+export function useGetRevenueByPeriod(period: RevenuePeriod, count: number = 12) {
+  return useQuery<RevenueByPeriod[]>({
+    queryKey: QK.revenueByPeriod(period, count),
+    queryFn: () => apiRequest<RevenueByPeriod[]>(`/api/dashboard/revenue?period=${period}&count=${count}`),
+  });
+}
 export function useGetLowStockMedicines() { return useQuery<Medicine[]>({ queryKey: QK.lowStockMedicines(), queryFn: () => apiRequest<Medicine[]>("/api/medicines/low-stock") }); }
 export function useGetExpiringSoonMedicines() { return useQuery<Medicine[]>({ queryKey: QK.expiringSoonMedicines(), queryFn: () => apiRequest<Medicine[]>("/api/medicines/expiring-soon") }); }
 export function useGetRecentSales() { return useQuery<Sale[]>({ queryKey: QK.recentSales(), queryFn: () => apiRequest<Sale[]>("/api/sales/recent") }); }
