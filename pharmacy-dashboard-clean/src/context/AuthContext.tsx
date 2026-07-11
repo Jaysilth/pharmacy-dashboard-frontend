@@ -121,6 +121,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = useCallback(() => {
     profileRequestIdRef.current += 1;
+
+    // SECURITY FIX: previously this only ever cleared the token locally —
+    // the token itself stayed valid server-side until it expired. Best-effort,
+    // fire-and-forget: must not block the redirect below or leave the user
+    // stuck on a network hiccup. Read the token BEFORE clearToken() runs,
+    // since apiRequest needs it to authenticate the call.
+    const tokenAtLogout = getToken();
+    if (tokenAtLogout) {
+      apiRequest("/api/auth/logout", { method: "POST", skipAuthLogout: true }).catch(() => {
+        // Non-fatal — if this fails (offline, backend down, token already
+        // expired), the token still naturally expires on its own (2h). The
+        // important case — a deliberate, reachable logout — is covered.
+      });
+    }
+
     clearToken();
     setCurrentUser(null);
     setIsAuthenticated(false);

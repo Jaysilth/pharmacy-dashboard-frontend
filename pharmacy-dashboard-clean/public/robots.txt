@@ -1,2 +1,6 @@
+# SECURITY FIX: was "Allow: /" — actively inviting crawlers to index an
+# internal clinical/pharmacy admin login. index.html already has a
+# noindex/nofollow meta tag, but robots.txt should say the same thing,
+# not contradict it.
 User-agent: *
-Allow: /
+Disallow: /
