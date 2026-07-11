@@ -10,7 +10,9 @@ import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid,
   Tooltip, ResponsiveContainer,
 } from "recharts";
-import { Pill, TrendingUp, AlertTriangle, Clock, Receipt, ArrowUpRight } from "lucide-react";
+import { Pill, TrendingUp, AlertTriangle, Clock, Receipt, ArrowUpRight, ShieldCheck } from "lucide-react";
+import { motion, AnimatePresence } from "motion/react";
+import { useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
@@ -33,6 +35,7 @@ function StatCard({
   accent = "blue",
   trend,
   testid,
+  hoverEffect = "none",
 }: {
   title: string;
   value?: string | number;
@@ -41,16 +44,101 @@ function StatCard({
   accent?: keyof typeof CARD_ACCENT;
   trend?: string;
   testid: string;
+  // Purely decorative, per-card micro-interaction on hover. Kept separate
+  // from the card's lift/shadow (that's the existing CSS-only `card-lift`
+  // class — untouched, still handles the y-translate + shadow on hover).
+  // "pulse-warning" deliberately has no floating particles: an Alerts card
+  // shouldn't look celebratory when it's telling you something is wrong.
+  hoverEffect?: "pills" | "coins" | "rising" | "pulse-warning" | "none";
 }) {
+  const [isHovered, setIsHovered] = useState(false);
+
   return (
     <div
-      className="card-lift bg-card rounded-2xl p-6 flex flex-col gap-4 border border-border"
+      className="card-lift bg-card rounded-2xl p-6 flex flex-col gap-4 border border-border relative overflow-hidden"
       data-testid={testid}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
     >
-      <div className="flex items-start justify-between">
-        <div className={cn("p-2.5 rounded-xl", CARD_ACCENT[accent])}>
+      <AnimatePresence>
+        {isHovered && hoverEffect === "pills" && (
+          <div className="absolute inset-0 overflow-hidden pointer-events-none rounded-2xl">
+            {[
+              { id: 1, left: "20%", delay: 0 },
+              { id: 2, left: "45%", delay: 0.18 },
+              { id: 3, left: "70%", delay: 0.08 },
+              { id: 4, left: "30%", delay: 0.28 },
+            ].map((pill) => (
+              <motion.div
+                key={pill.id}
+                initial={{ y: -20, opacity: 0 }}
+                animate={{ y: 120, opacity: [0, 0.4, 0.4, 0] }}
+                transition={{ duration: 1.4, ease: "easeInOut", delay: pill.delay, repeat: Infinity }}
+                style={{ left: pill.left, position: "absolute" }}
+                className="text-[#2F80ED] dark:text-blue-400"
+              >
+                <Pill className="w-3.5 h-3.5" />
+              </motion.div>
+            ))}
+          </div>
+        )}
+
+        {isHovered && hoverEffect === "coins" && (
+          <div className="absolute inset-0 overflow-hidden pointer-events-none rounded-2xl">
+            {[
+              { id: 1, left: "15%", delay: 0 },
+              { id: 2, left: "40%", delay: 0.15 },
+              { id: 3, left: "65%", delay: 0.08 },
+              { id: 4, left: "80%", delay: 0.25 },
+            ].map((coin) => (
+              <motion.div
+                key={coin.id}
+                initial={{ y: 80, opacity: 0 }}
+                animate={{ y: -30, opacity: [0, 0.4, 0.4, 0], scale: [0.7, 1.2, 0.9] }}
+                transition={{ duration: 1.5, ease: "easeOut", delay: coin.delay, repeat: Infinity }}
+                style={{ left: coin.left, position: "absolute" }}
+                className="text-[#27AE60] dark:text-green-400 font-bold font-mono text-sm select-none"
+              >
+                ₦
+              </motion.div>
+            ))}
+          </div>
+        )}
+
+        {isHovered && hoverEffect === "rising" && (
+          <div className="absolute inset-0 overflow-hidden pointer-events-none rounded-2xl">
+            {[
+              { id: 1, left: "30%", delay: 0 },
+              { id: 2, left: "55%", delay: 0.2 },
+              { id: 3, left: "75%", delay: 0.1 },
+            ].map((tick) => (
+              <motion.div
+                key={tick.id}
+                initial={{ y: 40, opacity: 0 }}
+                animate={{ y: -20, opacity: [0, 0.4, 0.4, 0] }}
+                transition={{ duration: 1.2, ease: "easeOut", delay: tick.delay, repeat: Infinity }}
+                style={{ left: tick.left, position: "absolute" }}
+                className="text-[#27AE60] dark:text-green-400"
+              >
+                <TrendingUp className="w-3.5 h-3.5" />
+              </motion.div>
+            ))}
+          </div>
+        )}
+      </AnimatePresence>
+
+      <div className="flex items-start justify-between relative z-10">
+        <motion.div
+          className={cn("p-2.5 rounded-xl", CARD_ACCENT[accent])}
+          animate={
+            isHovered && hoverEffect === "pulse-warning"
+              ? { boxShadow: ["0 0 0 0 rgba(235,87,87,0.4)", "0 0 0 8px rgba(235,87,87,0)"] }
+              : {}
+          }
+          transition={{ duration: 1, repeat: isHovered && hoverEffect === "pulse-warning" ? Infinity : 0 }}
+        >
           <Icon className="h-5 w-5" strokeWidth={1.8} />
-        </div>
+        </motion.div>
         {trend && (
           <span className="flex items-center gap-0.5 text-xs font-semibold text-[#27AE60]">
             <ArrowUpRight className="h-3.5 w-3.5" strokeWidth={2} />
@@ -59,7 +147,7 @@ function StatCard({
         )}
       </div>
 
-      <div>
+      <div className="relative z-10">
         <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-1.5">
           {title}
         </p>
@@ -136,6 +224,7 @@ export default function Dashboard() {
           loading={loadingSummary}
           accent="blue"
           testid="stat-medicines"
+          hoverEffect="pills"
         />
         <StatCard
           title="Sales Today"
@@ -143,8 +232,8 @@ export default function Dashboard() {
           icon={TrendingUp}
           loading={loadingSummary}
           accent="green"
-          trend="+12%"
           testid="stat-sales"
+          hoverEffect="rising"
         />
         <StatCard
           title="Revenue Today"
@@ -153,6 +242,7 @@ export default function Dashboard() {
           loading={loadingSummary}
           accent="blue"
           testid="stat-revenue"
+          hoverEffect="coins"
         />
         <StatCard
           title="Alerts"
@@ -161,6 +251,7 @@ export default function Dashboard() {
           loading={loadingSummary}
           accent={alertCount > 0 ? "red" : "blue"}
           testid="stat-alerts"
+          hoverEffect={alertCount > 0 ? "pulse-warning" : "none"}
         />
       </div>
 
@@ -257,20 +348,40 @@ export default function Dashboard() {
               {loadingLowStock ? (
                 <Skeleton className="h-8 w-full" />
               ) : lowStock && lowStock.length > 0 ? (
-                lowStock.map(med => (
-                  <div
-                    key={med.id}
-                    className="flex justify-between items-center"
-                    data-testid={`alert-lowstock-${med.id}`}
-                  >
-                    <p className="text-sm text-foreground truncate pr-2">{med.name}</p>
-                    <Badge className="bg-[#EB5757]/10 text-[#EB5757] border-0 font-mono text-[10px] flex-shrink-0">
-                      {med.quantity}
-                    </Badge>
-                  </div>
-                ))
+                // Ascending by quantity — most critical shortages surface first,
+                // instead of whatever order the API happens to return.
+                [...lowStock]
+                  .sort((a, b) => a.quantity - b.quantity)
+                  .map(med => {
+                    // Severity tiers within the low-stock list itself: everything
+                    // here is already "low," but 1 unit left and 9 units left
+                    // aren't the same urgency and shouldn't look identical.
+                    const severity =
+                      med.quantity <= 2 ? "critical" : med.quantity <= 5 ? "warning" : "watch";
+                    const severityClass =
+                      severity === "critical"
+                        ? "bg-[#EB5757]/10 text-[#EB5757]"
+                        : severity === "warning"
+                        ? "bg-[#F2C94C]/15 text-amber-600"
+                        : "bg-[#2F80ED]/10 text-[#2F80ED]";
+                    return (
+                      <div
+                        key={med.id}
+                        className="flex justify-between items-center"
+                        data-testid={`alert-lowstock-${med.id}`}
+                      >
+                        <p className="text-sm text-foreground truncate pr-2">{med.name}</p>
+                        <Badge className={cn("border-0 font-mono text-[10px] flex-shrink-0", severityClass)}>
+                          {med.quantity}
+                        </Badge>
+                      </div>
+                    );
+                  })
               ) : (
-                <p className="text-xs text-muted-foreground">All stock levels healthy.</p>
+                <div className="flex items-center gap-2 py-2">
+                  <ShieldCheck className="h-4 w-4 text-[#27AE60] flex-shrink-0" />
+                  <p className="text-xs text-muted-foreground">All stock levels healthy.</p>
+                </div>
               )}
             </div>
           </div>
@@ -305,7 +416,10 @@ export default function Dashboard() {
                   </div>
                 ))
               ) : (
-                <p className="text-xs text-muted-foreground">No medicines expiring soon.</p>
+                <div className="flex items-center gap-2 py-2">
+                  <ShieldCheck className="h-4 w-4 text-[#27AE60] flex-shrink-0" />
+                  <p className="text-xs text-muted-foreground">No medicines expiring soon.</p>
+                </div>
               )}
             </div>
           </div>
@@ -330,43 +444,57 @@ export default function Dashboard() {
             ))}
           </div>
         ) : recentSales && recentSales.length > 0 ? (
-          <div className="divide-y divide-border">
-            {recentSales.map(sale => {
-              const total = sale.grandTotal ?? sale.totalPrice ?? 0;
-              const itemName =
-                sale.items?.[0]?.itemName ?? sale.medicine?.name ?? "Unknown";
-              const count = sale.items?.length ?? 1;
+          <div className="overflow-x-auto -mx-2">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-left text-[11px] uppercase tracking-wide text-muted-foreground">
+                  <th className="font-medium px-2 pb-2 w-24">Time</th>
+                  <th className="font-medium px-2 pb-2">Item / Service</th>
+                  <th className="font-medium px-2 pb-2 hidden sm:table-cell">Method</th>
+                  <th className="font-medium px-2 pb-2 text-right">Amount</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {recentSales.map(sale => {
+                  const total = sale.grandTotal ?? sale.totalPrice ?? 0;
+                  const itemName =
+                    sale.items?.[0]?.itemName ?? sale.medicine?.name ?? "Unknown";
+                  const count = sale.items?.length ?? 1;
 
-              return (
-                <div
-                  key={sale.id}
-                  className="flex justify-between items-center py-3 first:pt-0 last:pb-0"
-                  data-testid={`recent-sale-${sale.id}`}
-                >
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium text-foreground truncate">{itemName}</p>
-                    <p className="text-[11px] text-muted-foreground mt-0.5">
-                      {format(new Date(sale.createdAt), "dd MMM · h:mm a")}
-                      {count > 1 && (
-                        <span className="ml-2 text-[#2F80ED] font-medium">
-                          +{count - 1} more
-                        </span>
-                      )}
-                    </p>
-                  </div>
-                  <div className="text-right flex-shrink-0 ml-4">
-                    <p className="text-sm font-bold font-mono text-foreground">
-                      ₦{Number(total).toLocaleString()}
-                    </p>
-                    {sale.paymentMethod && (
-                      <p className="text-[10px] uppercase tracking-wide text-muted-foreground mt-0.5">
-                        {sale.paymentMethod}
-                      </p>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
+                  return (
+                    <tr key={sale.id} data-testid={`recent-sale-${sale.id}`}>
+                      <td className="px-2 py-3 text-[11px] text-muted-foreground whitespace-nowrap align-top">
+                        {format(new Date(sale.createdAt), "dd MMM · h:mm a")}
+                      </td>
+                      <td className="px-2 py-3 align-top">
+                        <p className="text-sm font-medium text-foreground truncate max-w-[220px]">
+                          {itemName}
+                        </p>
+                        {count > 1 && (
+                          <span className="text-[11px] text-[#2F80ED] font-medium">
+                            +{count - 1} more
+                          </span>
+                        )}
+                        {/* Method shown here on narrow screens where the column is hidden */}
+                        {sale.paymentMethod && (
+                          <p className="text-[10px] uppercase tracking-wide text-muted-foreground sm:hidden mt-0.5">
+                            {sale.paymentMethod}
+                          </p>
+                        )}
+                      </td>
+                      <td className="px-2 py-3 text-[11px] uppercase tracking-wide text-muted-foreground hidden sm:table-cell align-top">
+                        {sale.paymentMethod ?? "—"}
+                      </td>
+                      <td className="px-2 py-3 text-right align-top">
+                        <p className="text-sm font-bold font-mono text-foreground whitespace-nowrap">
+                          ₦{Number(total).toLocaleString()}
+                        </p>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
         ) : (
           <p className="text-sm text-muted-foreground text-center py-8">
