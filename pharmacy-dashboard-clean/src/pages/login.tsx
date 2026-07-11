@@ -181,16 +181,21 @@ export default function Login() {
             />
           </div>
 
-          {/* System portal tag */}
+          {/* System bulletin — was just a static "SYSTEM PORTAL v3.0" tag.
+              Reusing the same space to actually say something useful. */}
           <div
-            className="pl-7 text-[11px] font-mono tracking-wider"
-            style={{
-              borderTop: "1px solid rgba(255,255,255,0.1)",
-              paddingTop: 16,
-              color: "#94a3b8",
-            }}
+            className="pl-7"
+            style={{ borderTop: "1px solid rgba(255,255,255,0.1)", paddingTop: 16 }}
           >
-            SYSTEM PORTAL v3.0
+            <p
+              className="text-[10px] font-bold uppercase tracking-widest mb-1.5"
+              style={{ color: "#8eb0cc" }}
+            >
+              What's New
+            </p>
+            <p className="text-xs leading-relaxed" style={{ color: "#cbd5e1" }}>
+              Enhanced inventory tracking, faster patient search, and automated low-stock alerts.
+            </p>
           </div>
         </div>
       </div>

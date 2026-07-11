@@ -39,7 +39,11 @@ const CATEGORY_LABEL: Record<string, string> = {
 };
 
 export default function Medicines() {
-  const [search, setSearch]       = useState("");
+  // Reads ?search= once on mount — lets other pages (e.g. the dashboard's
+  // low-stock "Restock" shortcut) deep-link straight to a filtered view
+  // instead of dropping the user on a blank list they have to re-search.
+  const initialSearch = new URLSearchParams(window.location.search).get("search") ?? "";
+  const [search, setSearch]       = useState(initialSearch);
   const [activeCategory, setActiveCategory] = useState("");
   const { toast } = useToast();
 

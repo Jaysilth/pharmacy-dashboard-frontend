@@ -95,8 +95,11 @@ function NavBody({
 
   return (
     <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-5">
-      {groups.map((group) => (
-        <div key={group.label}>
+      {groups.map((group, i) => (
+        <div
+          key={group.label}
+          className={cn(group.label && i > 0 && "pt-4 border-t border-sidebar-border/50")}
+        >
           {group.label && (
             <p className="px-3 mb-1.5 text-[10px] font-bold uppercase tracking-widest text-sidebar-foreground/40">
               {group.label}
@@ -170,7 +173,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   // ── Profile + logout section ──────────────────────────────────────────────
 
   const ProfileSection = ({ onLogout }: { onLogout: () => void }) => (
-    <div className="px-3 py-4 space-y-2.5">
+    <div className="px-3 py-4 space-y-2">
       <div className="flex items-center gap-3 px-3.5 py-3 rounded-2xl bg-sidebar-accent/50 border border-sidebar-border/40">
         <div className="flex-shrink-0 w-9 h-9 rounded-full bg-primary/20 flex items-center justify-center">
           <User className="h-4 w-4 text-primary" />
@@ -182,17 +185,22 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           <p className="text-[11px] text-sidebar-foreground/50 mt-0.5">{displayRole}</p>
         </div>
       </div>
-      <ThemeToggle />
-      <button
-        onClick={onLogout}
-        className="flex items-center gap-2 w-full px-3.5 py-2 rounded-full text-xs font-medium
-          text-sidebar-foreground/70 hover:text-destructive hover:bg-destructive/10
-          transition-all duration-150"
-        data-testid="button-logout"
-      >
-        <LogOut className="h-4 w-4" />
-        Sign out
-      </button>
+
+      {/* Theme toggle + sign out share one row (icon-only) instead of two
+          full-width stacked rows — same actions, less vertical space. */}
+      <div className="flex items-center gap-2">
+        <ThemeToggle compact />
+        <button
+          onClick={onLogout}
+          className="flex-1 flex items-center gap-2 px-3.5 py-2 rounded-full text-xs font-medium
+            text-sidebar-foreground/70 hover:text-destructive hover:bg-destructive/10
+            transition-all duration-150"
+          data-testid="button-logout"
+        >
+          <LogOut className="h-4 w-4" />
+          Sign out
+        </button>
+      </div>
     </div>
   );
 

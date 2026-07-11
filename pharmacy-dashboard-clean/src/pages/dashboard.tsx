@@ -10,7 +10,8 @@ import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid,
   Tooltip, ResponsiveContainer,
 } from "recharts";
-import { Pill, TrendingUp, AlertTriangle, Clock, Receipt, ArrowUpRight, ShieldCheck } from "lucide-react";
+import { Pill, TrendingUp, AlertTriangle, Clock, Receipt, ArrowUpRight, ShieldCheck, PackagePlus } from "lucide-react";
+import { Link } from "wouter";
 import { motion, AnimatePresence } from "motion/react";
 import { useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -367,13 +368,27 @@ export default function Dashboard() {
                     return (
                       <div
                         key={med.id}
-                        className="flex justify-between items-center"
+                        className="group flex justify-between items-center"
                         data-testid={`alert-lowstock-${med.id}`}
                       >
                         <p className="text-sm text-foreground truncate pr-2">{med.name}</p>
-                        <Badge className={cn("border-0 font-mono text-[10px] flex-shrink-0", severityClass)}>
-                          {med.quantity}
-                        </Badge>
+                        <div className="flex items-center gap-1.5 flex-shrink-0">
+                          <Badge className={cn("border-0 font-mono text-[10px]", severityClass)}>
+                            {med.quantity}
+                          </Badge>
+                          {/* Hidden until row hover — avoids 20 buttons competing
+                              for attention when nothing's actually being restocked
+                              right now. Deep-links to Medicines pre-searched, so
+                              the user lands on the row instead of a blank list. */}
+                          <Link
+                            href={`/medicines?search=${encodeURIComponent(med.name)}`}
+                            className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded-md hover:bg-[#2F80ED]/10 text-[#2F80ED]"
+                            aria-label={`Restock ${med.name}`}
+                            title="Restock"
+                          >
+                            <PackagePlus className="h-3.5 w-3.5" />
+                          </Link>
+                        </div>
                       </div>
                     );
                   })
