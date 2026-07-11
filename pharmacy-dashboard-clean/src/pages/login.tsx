@@ -204,17 +204,17 @@ export default function Login() {
           {/* Mobile logo (hidden on desktop — left panel covers it) */}
           <div className="flex items-center gap-2 md:hidden">
             <Activity className="h-5 w-5 text-[#4a85a4]" />
-            <span className="text-lg font-black tracking-widest uppercase text-slate-800">
+            <span className="text-lg font-black tracking-widest uppercase text-foreground">
               JOTESS <span className="font-normal text-[#4a85a4]">Eye Specialist</span>
             </span>
           </div>
 
           {/* Heading */}
           <div className="space-y-1.5">
-            <h1 className="text-[1.75rem] font-bold tracking-tight text-slate-900 leading-tight">
+            <h1 className="text-[1.75rem] font-bold tracking-tight text-foreground leading-tight">
               Welcome back
             </h1>
-            <p className="text-sm text-slate-500 leading-relaxed">
+            <p className="text-sm text-muted-foreground leading-relaxed">
               Sign in to your JotessEyeSpecialist account to continue.
             </p>
           </div>
@@ -231,7 +231,7 @@ export default function Login() {
                 name="username"
                 render={({ field }) => (
                   <FormItem className="space-y-1.5">
-                    <FormLabel className="text-xs font-semibold uppercase tracking-widest text-slate-500">
+                    <FormLabel className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
                       Username or Email
                     </FormLabel>
                     <FormControl>
@@ -269,7 +269,7 @@ export default function Login() {
                 name="password"
                 render={({ field }) => (
                   <FormItem className="space-y-1.5">
-                    <FormLabel className="text-xs font-semibold uppercase tracking-widest text-slate-500">
+                    <FormLabel className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
                       Password
                     </FormLabel>
                     <FormControl>
@@ -374,7 +374,7 @@ export default function Login() {
           </Form>
 
           {/* Footer note */}
-          <p className="text-center text-[11px] text-slate-400 tracking-wide">
+          <p className="text-center text-[11px] text-muted-foreground tracking-wide">
             JotessEyeSpecialist Clinical Management System
           </p>
         </div>
