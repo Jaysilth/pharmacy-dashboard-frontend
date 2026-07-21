@@ -298,7 +298,7 @@ function EditUserModal({ user }: { user: UserProfile }) {
 // ── Main Page ─────────────────────────────────────────────────────────────────
 
 export default function UsersPage() {
-  const { currentUser } = useAuth();
+  const { currentUser, isSuperAdmin } = useAuth();
   const { toast } = useToast();
   const { data: users, isLoading } = useGetUsers();
   const deleteUser = useDeleteUser();
@@ -413,8 +413,8 @@ export default function UsersPage() {
                             </Button>
                           )}
 
-                          {/* Delete — hidden for current user */}
-                          {!isCurrentUser && (
+                          {/* Delete — SUPER_ADMIN only, hidden for current user */}
+                          {isSuperAdmin && !isCurrentUser && (
                             <AlertDialog>
                               <AlertDialogTrigger asChild>
                                 <Button
