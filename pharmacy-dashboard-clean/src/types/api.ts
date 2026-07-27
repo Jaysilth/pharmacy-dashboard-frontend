@@ -114,6 +114,9 @@ export interface Sale {
   discountAmount?: number;
   items: SaleItemResponse[];
   createdAt: string;
+  // Business-effective date — differs from createdAt's date when the sale
+  // was backdated (SUPER_ADMIN only).
+  saleDate?: string;
   // legacy
   medicine?: { id: number; name: string; manufacturer?: string } | null;
   quantity?: number;
@@ -138,6 +141,12 @@ export interface SaleInput {
   discountType?: "FIXED" | "PERCENT";
   discountValue?: number;
   discountAmount?: number;
+  // Emergency backdating — SUPER_ADMIN only, ISO date string (YYYY-MM-DD).
+  // Backend rejects anything outside the backdate window or from a
+  // non-SUPER_ADMIN. Omit for a normal, present-moment sale.
+  saleDate?: string;
+  // Required whenever saleDate is set.
+  backdateReason?: string;
   items: { itemType: string; itemId: number; quantity: number }[];
 }
 
@@ -314,4 +323,3 @@ export interface IolUsageRecord {
   notes?: string;
   usedAt: string;
 }
-

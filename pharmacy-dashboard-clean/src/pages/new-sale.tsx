@@ -5,6 +5,7 @@ import {
   useGetGlassesAccessories, useGetGlassesRepairs, useCreateSale,
 } from "@/lib/queries";
 import { useClinical } from "@/context/ClinicalContext";
+import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { ApiError } from "@/lib/api-client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,6 +16,7 @@ import {
   Search, Plus, Minus, Trash2, ShoppingCart, User, CreditCard,
   Pill, Glasses, Package, Wrench, Stethoscope,
   Calendar, FileText, FlaskConical, Tag, Percent, ChevronDown,
+  AlertTriangle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -68,6 +70,7 @@ export default function NewSale() {
   const { toast } = useToast();
   const createSale = useCreateSale();
   const clinical = useClinical();
+  const { isSuperAdmin } = useAuth();
 
   const [tab, setTab]           = useState<ItemTab>("MEDICINE");
   const [search, setSearch]     = useState("");
@@ -76,6 +79,20 @@ export default function NewSale() {
   const [customerPhone, setCP]  = useState("");
   const [paymentMethod, setPM]  = useState<PaymentMethod>("CASH");
   const [notes, setNotes]       = useState("");
+
+  // ── Emergency backdate (SUPER_ADMIN only) ──
+  // Bounded to the last 90 days — long enough to fix a sale missed at the
+  // end of a month, but not unbounded, since an open-ended window would
+  // let revenue for any past period be restated with no way to catch it
+  // later. The backend enforces this independently; these bounds just
+  // keep the picker honest in the UI.
+  const BACKDATE_WINDOW_DAYS = 90;
+  const [backdateEnabled, setBackdateEnabled] = useState(false);
+  const todayIso = new Date().toISOString().slice(0, 10);
+  const minBackdateIso = new Date(Date.now() - BACKDATE_WINDOW_DAYS * 86400000)
+    .toISOString().slice(0, 10);
+  const [backdateValue, setBackdateValue] = useState(todayIso);
+  const [backdateReason, setBackdateReason] = useState("");
 
   // ── Discount state ──
   const [discountEnabled, setDiscountEnabled] = useState(false);
@@ -150,12 +167,23 @@ export default function NewSale() {
     if (!customerName.trim()) { toast({ title: "Customer name is required.", variant: "destructive" }); return; }
     if (!customerPhone.trim()) { toast({ title: "Customer phone is required.", variant: "destructive" }); return; }
     if (cart.length === 0) { toast({ title: "Add at least one item.", variant: "destructive" }); return; }
+    if (backdateEnabled && isSuperAdmin) {
+      if (backdateValue < minBackdateIso || backdateValue > todayIso) {
+        toast({ title: `Backdated sales must be within the last ${BACKDATE_WINDOW_DAYS} days.`, variant: "destructive" });
+        return;
+      }
+      if (!backdateReason.trim()) {
+        toast({ title: "A reason is required to backdate a sale.", variant: "destructive" });
+        return;
+      }
+    }
 
     createSale.mutate({
       customerName:  customerName.trim(),
       customerPhone: customerPhone.trim(),
       paymentMethod,
       notes: notes.trim() || undefined,
+      ...(backdateEnabled && isSuperAdmin ? { saleDate: backdateValue, backdateReason: backdateReason.trim() } : {}),
       // Include discount metadata for when backend supports it
       ...(discountEnabled && discountAmount > 0 ? {
         discountType:   discountMode,
@@ -295,6 +323,43 @@ export default function NewSale() {
                 <label className="text-xs font-medium text-muted-foreground mb-1 block">Notes (optional)</label>
                 <Input placeholder="Additional notes…" value={notes} onChange={e => setNotes(e.target.value)} />
               </div>
+
+              {isSuperAdmin && (
+                <div className="rounded-lg border border-amber-200 bg-amber-50/60 p-3 space-y-2">
+                  <label className="flex items-center gap-2 text-xs font-medium text-amber-800 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={backdateEnabled}
+                      onChange={e => setBackdateEnabled(e.target.checked)}
+                      className="h-3.5 w-3.5 rounded accent-amber-600 cursor-pointer"
+                    />
+                    <AlertTriangle className="h-3.5 w-3.5" />
+                    This sale happened earlier and was forgotten — backdate it
+                  </label>
+                  {backdateEnabled && (
+                    <div className="space-y-2">
+                      <Input
+                        type="date"
+                        value={backdateValue}
+                        min={minBackdateIso}
+                        max={todayIso}
+                        onChange={e => setBackdateValue(e.target.value)}
+                        className="h-8 text-sm"
+                      />
+                      <Input
+                        placeholder={'Reason (required) — e.g. "Forgotten by pharmacist on duty, entered late"'}
+                        value={backdateReason}
+                        onChange={e => setBackdateReason(e.target.value)}
+                        className="h-8 text-sm"
+                      />
+                      <p className="text-[11px] text-amber-700">
+                        Only dates within the last {BACKDATE_WINDOW_DAYS} days are allowed. This is logged
+                        as a backdated entry with your username and reason attached.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
