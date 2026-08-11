@@ -1,8 +1,14 @@
-import { useState } from "react";
-import { useGetRevenueByPeriod, type RevenuePeriod } from "@/lib/queries";
+import { useState, type ElementType } from "react";
+import {
+  useGetRevenueByPeriod, type RevenuePeriod,
+  useGetCategorySummary,
+} from "@/lib/queries";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { TrendingUp, Calendar } from "lucide-react";
+import {
+  TrendingUp, Calendar, Pill, Glasses, Package, Wrench,
+  Stethoscope, FileText, FlaskConical,
+} from "lucide-react";
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid,
   Tooltip, ResponsiveContainer,
@@ -30,12 +36,81 @@ function ChartTooltip({
 }
 
 const PERIOD_OPTIONS: { value: RevenuePeriod; label: string; count: number }[] = [
-  { value: "week",  label: "Weekly",  count: 12 }, // last 12 ISO calendar weeks (Mon–Sun)
+  { value: "week",  label: "Weekly",  count: 12 }, // last 12 Sunday–Saturday weeks
   { value: "month", label: "Monthly", count: 12 }, // last 12 calendar months
   { value: "year",  label: "Yearly",  count: 5 },  // last 5 calendar years
 ];
 
+// Same 8 categories as new-sale.tsx's TABS, so colors/icons/labels stay
+// consistent with how these categories look everywhere else in the app.
+const CATEGORY_META: Record<string, { label: string; icon: ElementType; color: string }> = {
+  MEDICINE:          { label: "Medicines",   icon: Pill,         color: "text-blue-600 bg-blue-50 dark:bg-blue-950/40" },
+  GLASSES:           { label: "Glasses",     icon: Glasses,      color: "text-violet-600 bg-violet-50 dark:bg-violet-950/40" },
+  GLASSES_ACCESSORY: { label: "Accessories", icon: Package,      color: "text-orange-600 bg-orange-50 dark:bg-orange-950/40" },
+  GLASSES_REPAIR:    { label: "Repairs",     icon: Wrench,       color: "text-gray-600 bg-gray-50 dark:bg-gray-800/40" },
+  SURGERY:           { label: "Surgeries",   icon: Stethoscope,  color: "text-rose-600 bg-rose-50 dark:bg-rose-950/40" },
+  CLINIC_VISIT:      { label: "Visits",      icon: Calendar,     color: "text-emerald-600 bg-emerald-50 dark:bg-emerald-950/40" },
+  PROCEDURE:         { label: "Procedures",  icon: FileText,     color: "text-indigo-600 bg-indigo-50 dark:bg-indigo-950/40" },
+  LAB_TEST:          { label: "Lab Tests",   icon: FlaskConical, color: "text-amber-600 bg-amber-50 dark:bg-amber-950/40" },
+};
+const CATEGORY_ORDER = Object.keys(CATEGORY_META);
+
+type ViewTab = "revenue" | "category-summary";
+
 export default function Revenue() {
+  const [view, setView] = useState<ViewTab>("revenue");
+
+  return (
+    <div className="space-y-6">
+      {/* ── Header ── */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1
+            className="text-2xl font-bold text-foreground tracking-tight"
+            data-testid="text-revenue-title"
+          >
+            Revenue
+          </h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            {view === "revenue"
+              ? "Revenue over time, grouped by calendar period."
+              : "How many of each category was sold or performed, per week."}
+          </p>
+        </div>
+
+        {/* Revenue / Category Summary switcher — kept as one nav destination
+           instead of a second sidebar item, since both views are "sales
+           over time," just sliced differently. */}
+        <div className="flex items-center gap-1 bg-muted rounded-xl p-1 self-start">
+          <Button
+            size="sm"
+            variant={view === "revenue" ? "default" : "ghost"}
+            className="rounded-lg text-xs font-semibold px-4"
+            onClick={() => setView("revenue")}
+            data-testid="revenue-view-revenue"
+          >
+            Revenue
+          </Button>
+          <Button
+            size="sm"
+            variant={view === "category-summary" ? "default" : "ghost"}
+            className="rounded-lg text-xs font-semibold px-4"
+            onClick={() => setView("category-summary")}
+            data-testid="revenue-view-category-summary"
+          >
+            Category Summary
+          </Button>
+        </div>
+      </div>
+
+      {view === "revenue" ? <RevenueView /> : <CategorySummaryView />}
+    </div>
+  );
+}
+
+// ── Revenue view (week/month/year toggle + chart + breakdown) ──────────────
+
+function RevenueView() {
   const [period, setPeriod] = useState<RevenuePeriod>("month");
   const activeOption = PERIOD_OPTIONS.find((o) => o.value === period)!;
   const { data, isLoading } = useGetRevenueByPeriod(period, activeOption.count);
@@ -47,22 +122,8 @@ export default function Revenue() {
 
   return (
     <div className="space-y-8">
-      {/* ── Header ── */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1
-            className="text-2xl font-bold text-foreground tracking-tight"
-            data-testid="text-revenue-title"
-          >
-            Revenue
-          </h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Revenue over time, grouped by calendar {period}.
-          </p>
-        </div>
-
-        {/* Week / Month / Year toggle */}
-        <div className="flex items-center gap-1 bg-muted rounded-xl p-1 self-start">
+      <div className="flex justify-end">
+        <div className="flex items-center gap-1 bg-muted rounded-xl p-1">
           {PERIOD_OPTIONS.map((opt) => (
             <Button
               key={opt.value}
@@ -204,6 +265,116 @@ export default function Revenue() {
                 </span>
               </div>
             ))}
+          </div>
+        ) : (
+          <p className="text-sm text-muted-foreground py-8 text-center">No data yet.</p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── Category summary view (weekly line-item counts per category) ──────────
+
+function CategorySummaryView() {
+  const WEEKS = 12;
+  const { data, isLoading } = useGetCategorySummary(WEEKS);
+
+  // Total per category across the whole visible range — quick "what's
+  // most common" glance, computed client-side from what's already fetched.
+  const totalsByCategory: Record<string, number> = {};
+  data?.forEach((week) => {
+    CATEGORY_ORDER.forEach((cat) => {
+      totalsByCategory[cat] = (totalsByCategory[cat] ?? 0) + (week.counts[cat] ?? 0);
+    });
+  });
+  const rankedCategories = [...CATEGORY_ORDER].sort(
+    (a, b) => (totalsByCategory[b] ?? 0) - (totalsByCategory[a] ?? 0)
+  );
+
+  return (
+    <div className="space-y-8">
+      {/* ── Totals strip ── */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
+        {isLoading ? (
+          Array.from({ length: 8 }).map((_, i) => <Skeleton key={i} className="h-20 rounded-xl" />)
+        ) : (
+          rankedCategories.map((cat) => {
+            const meta = CATEGORY_META[cat];
+            const Icon = meta.icon;
+            return (
+              <div
+                key={cat}
+                className="card-lift bg-card rounded-xl border border-border p-3 flex flex-col gap-2"
+                data-testid={`category-total-${cat}`}
+              >
+                <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${meta.color}`}>
+                  <Icon className="h-3.5 w-3.5" strokeWidth={1.8} />
+                </div>
+                <div>
+                  <p className="text-lg font-bold text-foreground leading-none">
+                    {totalsByCategory[cat] ?? 0}
+                  </p>
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wide mt-1">
+                    {meta.label}
+                  </p>
+                </div>
+              </div>
+            );
+          })
+        )}
+      </div>
+
+      {/* ── Weekly breakdown table ── */}
+      <div className="bg-card rounded-2xl border border-border card-lift overflow-hidden">
+        <div className="px-6 py-4 border-b border-border">
+          <h2 className="text-sm font-semibold text-foreground">Weekly Breakdown</h2>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Last {WEEKS} weeks (Sun–Sat). Counts are line items, not units — a surgery or
+            procedure always counts as 1 regardless of quantity.
+          </p>
+        </div>
+
+        {isLoading ? (
+          <div className="p-6 space-y-3">
+            {Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-6 w-full" />)}
+          </div>
+        ) : data && data.length > 0 ? (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm min-w-[720px]">
+              <thead>
+                <tr className="text-left text-[11px] uppercase tracking-wide text-muted-foreground border-b border-border">
+                  <th className="font-medium px-6 py-3">Week</th>
+                  {rankedCategories.map((cat) => (
+                    <th key={cat} className="font-medium px-3 py-3 text-right">
+                      {CATEGORY_META[cat].label}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {[...data].reverse().map((week) => (
+                  <tr key={week.periodStart} data-testid={`category-week-${week.periodStart}`}>
+                    <td className="px-6 py-3 text-foreground font-medium whitespace-nowrap">
+                      {week.label}
+                    </td>
+                    {rankedCategories.map((cat) => {
+                      const count = week.counts[cat] ?? 0;
+                      return (
+                        <td
+                          key={cat}
+                          className={`px-3 py-3 text-right font-mono ${
+                            count > 0 ? "text-foreground font-semibold" : "text-muted-foreground/50"
+                          }`}
+                        >
+                          {count}
+                        </td>
+                      );
+                    })}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         ) : (
           <p className="text-sm text-muted-foreground py-8 text-center">No data yet.</p>
