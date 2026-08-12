@@ -33,6 +33,7 @@ export const QK = {
   salesByDay:          () => ["dashboard", "sales-by-day"],
   revenueByPeriod:     (period: string, count: number) => ["dashboard", "revenue", period, count],
   categorySummary:     (weeks: number) => ["dashboard", "category-summary", weeks],
+  topItems:            (limit: number) => ["dashboard", "top-items", limit],
   lowStockMedicines:   () => ["dashboard", "low-stock"],
   expiringSoonMedicines: () => ["dashboard", "expiring-soon"],
   recentSales:         () => ["dashboard", "recent-sales"],
@@ -159,6 +160,20 @@ export function useGetCategorySummary(weeks: number = 12) {
   return useQuery<CategorySummary[]>({
     queryKey: QK.categorySummary(weeks),
     queryFn: () => apiRequest<CategorySummary[]>(`/api/dashboard/category-summary?weeks=${weeks}`),
+  });
+}
+
+export interface TopItem {
+  itemType: string;
+  itemId: number;
+  itemName: string;
+  totalQuantity: number;
+  totalRevenue: number;
+}
+export function useGetTopItems(limit: number = 5) {
+  return useQuery<TopItem[]>({
+    queryKey: QK.topItems(limit),
+    queryFn: () => apiRequest<TopItem[]>(`/api/dashboard/top-items?limit=${limit}`),
   });
 }
 export function useGetLowStockMedicines() { return useQuery<Medicine[]>({ queryKey: QK.lowStockMedicines(), queryFn: () => apiRequest<Medicine[]>("/api/medicines/low-stock") }); }

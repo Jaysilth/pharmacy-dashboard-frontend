@@ -2,6 +2,7 @@ import { useState, type ElementType } from "react";
 import {
   useGetRevenueByPeriod, type RevenuePeriod,
   useGetCategorySummary,
+  useGetTopItems,
 } from "@/lib/queries";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
@@ -55,7 +56,7 @@ const CATEGORY_META: Record<string, { label: string; icon: ElementType; color: s
 };
 const CATEGORY_ORDER = Object.keys(CATEGORY_META);
 
-type ViewTab = "revenue" | "category-summary";
+type ViewTab = "revenue" | "category-summary" | "top-items";
 
 export default function Revenue() {
   const [view, setView] = useState<ViewTab>("revenue");
@@ -74,14 +75,16 @@ export default function Revenue() {
           <p className="text-sm text-muted-foreground mt-1">
             {view === "revenue"
               ? "Revenue over time, grouped by calendar period."
-              : "How many of each category was sold or performed, per week."}
+              : view === "category-summary"
+              ? "How many of each category was sold or performed, per week."
+              : "Which specific drugs, surgeries, and other items sold or were performed most, all-time."}
           </p>
         </div>
 
-        {/* Revenue / Category Summary switcher — kept as one nav destination
-           instead of a second sidebar item, since both views are "sales
-           over time," just sliced differently. */}
-        <div className="flex items-center gap-1 bg-muted rounded-xl p-1 self-start">
+        {/* Revenue / Category Summary / Top Items switcher — kept as one nav
+           destination instead of a third sidebar item, since all three are
+           "sales over time," just sliced differently. */}
+        <div className="flex items-center gap-1 bg-muted rounded-xl p-1 self-start flex-wrap">
           <Button
             size="sm"
             variant={view === "revenue" ? "default" : "ghost"}
@@ -100,10 +103,19 @@ export default function Revenue() {
           >
             Category Summary
           </Button>
+          <Button
+            size="sm"
+            variant={view === "top-items" ? "default" : "ghost"}
+            className="rounded-lg text-xs font-semibold px-4"
+            onClick={() => setView("top-items")}
+            data-testid="revenue-view-top-items"
+          >
+            Top Items
+          </Button>
         </div>
       </div>
 
-      {view === "revenue" ? <RevenueView /> : <CategorySummaryView />}
+      {view === "revenue" ? <RevenueView /> : view === "category-summary" ? <CategorySummaryView /> : <TopItemsView />}
     </div>
   );
 }
@@ -380,6 +392,88 @@ function CategorySummaryView() {
           <p className="text-sm text-muted-foreground py-8 text-center">No data yet.</p>
         )}
       </div>
+    </div>
+  );
+}
+
+// ── Top items view (which specific drugs/surgeries/etc sold or were
+//    performed most, all-time, ranked by total quantity) ──────────────────
+
+function TopItemsView() {
+  const LIMIT_PER_CATEGORY = 5;
+  const { data, isLoading } = useGetTopItems(LIMIT_PER_CATEGORY);
+
+  // Group the flat list back into one section per category, in the same
+  // fixed order used elsewhere on this page.
+  const byCategory: Record<string, typeof data> = {};
+  data?.forEach((item) => {
+    (byCategory[item.itemType] ??= []).push(item);
+  });
+  const categoriesWithData = CATEGORY_ORDER.filter((cat) => (byCategory[cat]?.length ?? 0) > 0);
+
+  return (
+    <div className="space-y-6">
+      <p className="text-xs text-muted-foreground -mt-2">
+        All-time, ranked by total quantity (units sold, or times performed for services).
+        This is plain counting — no AI summarization on top of it, so what you see here is
+        exactly what's in the sales data.
+      </p>
+
+      {isLoading ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-64 rounded-2xl" />)}
+        </div>
+      ) : categoriesWithData.length > 0 ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          {categoriesWithData.map((cat) => {
+            const meta = CATEGORY_META[cat];
+            const Icon = meta.icon;
+            const items = byCategory[cat] ?? [];
+            const maxQty = Math.max(...items.map((i) => i.totalQuantity), 1);
+
+            return (
+              <div
+                key={cat}
+                className="card-lift bg-card rounded-2xl border border-border p-5"
+                data-testid={`top-items-${cat}`}
+              >
+                <div className="flex items-center gap-2 mb-4">
+                  <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${meta.color}`}>
+                    <Icon className="h-3.5 w-3.5" strokeWidth={1.8} />
+                  </div>
+                  <h2 className="text-sm font-semibold text-foreground">{meta.label}</h2>
+                </div>
+
+                <div className="space-y-3">
+                  {items.map((item, i) => (
+                    <div key={item.itemId} className="flex items-center gap-3">
+                      <span className="text-xs font-mono text-muted-foreground w-4 flex-shrink-0">
+                        {i + 1}
+                      </span>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between gap-2 mb-1">
+                          <p className="text-sm text-foreground truncate">{item.itemName}</p>
+                          <span className="text-xs font-mono font-semibold text-foreground flex-shrink-0">
+                            {item.totalQuantity}
+                          </span>
+                        </div>
+                        <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+                          <div
+                            className={`h-full rounded-full ${meta.color.split(" ")[0].replace("text-", "bg-")}`}
+                            style={{ width: `${(item.totalQuantity / maxQty) * 100}%` }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      ) : (
+        <p className="text-sm text-muted-foreground py-12 text-center">No sales data yet.</p>
+      )}
     </div>
   );
 }
