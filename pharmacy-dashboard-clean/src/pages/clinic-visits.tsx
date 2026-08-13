@@ -16,6 +16,8 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
 import { Plus, Edit, Trash2 } from "lucide-react";
+import { ExportButton } from "@/components/export-button";
+import { exportToExcel } from "@/lib/export-excel";
 
 const VISIT_CATEGORIES = [
   { value: "NEW",       label: "New Patient",   color: "bg-emerald-50 text-emerald-700 border-emerald-200" },
@@ -116,7 +118,24 @@ export default function ClinicVisitsPage() {
           <h1 className="text-3xl font-bold tracking-tight text-foreground">Clinic Visits</h1>
           <p className="text-muted-foreground mt-1">Manage consultation types and fees. Stored locally — works offline.</p>
         </div>
-        <VisitModal />
+        <div className="flex items-center gap-2">
+          <ExportButton
+            testId="button-export-clinic-visits"
+            disabled={clinicVisits.length === 0}
+            onExport={() =>
+              exportToExcel(
+                "clinic-visits",
+                clinicVisits.map(v => ({
+                  Name: v.name,
+                  Category: v.category === "OTHERS" && v.customCategory ? v.customCategory : catInfo(v.category).label,
+                  "Price (₦)": v.price,
+                  Description: v.description ?? "",
+                }))
+              )
+            }
+          />
+          <VisitModal />
+        </div>
       </div>
       <Card className="shadow-sm">
         <CardContent className="p-0">

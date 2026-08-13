@@ -13,6 +13,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ExportButton } from "@/components/export-button";
+import { exportToExcel } from "@/lib/export-excel";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -110,7 +112,25 @@ export default function SurgeriesPage() {
           <h1 className="text-3xl font-bold tracking-tight text-foreground">Surgery Services</h1>
           <p className="text-muted-foreground mt-1">Manage surgical procedures and pricing.</p>
         </div>
-        <SurgeryFormModal />
+        <div className="flex items-center gap-2">
+          <ExportButton
+            testId="button-export-surgeries"
+            disabled={!surgeries || surgeries.length === 0}
+            onExport={() =>
+              exportToExcel(
+                "surgeries",
+                (surgeries ?? []).map(s => ({
+                  Name: s.name,
+                  Category: s.category ?? "",
+                  "Price (₦)": s.price,
+                  "Duration (min)": s.durationMinutes ?? "",
+                  Active: s.active ? "Yes" : "No",
+                }))
+              )
+            }
+          />
+          <SurgeryFormModal />
+        </div>
       </div>
 
       <Card className="shadow-sm border-border">

@@ -10,6 +10,8 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Search, ExternalLink, Edit, Trash2 } from "lucide-react";
 import { MedicineFormModal } from "@/components/medicine-form-modal";
+import { ExportButton } from "@/components/export-button";
+import { exportToExcel } from "@/lib/export-excel";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
@@ -71,7 +73,29 @@ export default function Medicines() {
           <h1 className="text-3xl font-bold tracking-tight text-foreground">Medicines Inventory</h1>
           <p className="text-muted-foreground mt-1">Manage all available pharmaceutical stock.</p>
         </div>
-        <MedicineFormModal />
+        <div className="flex items-center gap-2">
+          <ExportButton
+            testId="button-export-medicines"
+            disabled={!filtered || filtered.length === 0}
+            onExport={() =>
+              exportToExcel(
+                "medicines",
+                (filtered ?? []).map(m => ({
+                  Name: m.name,
+                  Batch: m.batchLabel ?? "",
+                  Category: m.category ?? "",
+                  Manufacturer: m.manufacturer ?? "",
+                  Quantity: m.quantity,
+                  "Price (₦)": m.price,
+                  "Expiry Date": m.expiryDate,
+                  "Low Stock": m.isLowStock ? "Yes" : "No",
+                  Expired: m.isExpired ? "Yes" : "No",
+                }))
+              )
+            }
+          />
+          <MedicineFormModal />
+        </div>
       </div>
 
       <Card className="shadow-sm border-border">

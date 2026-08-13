@@ -41,6 +41,8 @@ import {
 } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
 import { Plus, Edit, Trash2, Search, Package, History, Syringe } from "lucide-react";
+import { ExportButton } from "@/components/export-button";
+import { exportToExcel } from "@/lib/export-excel";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { IolModal } from "@/components/IolModal";
@@ -213,10 +215,68 @@ export default function ConsumablesPage() {
           </p>
         </div>
 
-        {activeTab === "STOCK" && <ConsumableModal />}
-        {activeTab === "USAGE_LOG" && <ConsumableUsageModal />}
-        {activeTab === "IOL" && <IolModal />}
-        {activeTab === "IOL_USAGE" && <IolUsageModal />}
+        <div className="flex items-center gap-2">
+          <ExportButton
+            testId="button-export-consumables"
+            onExport={() => {
+              if (activeTab === "STOCK") {
+                exportToExcel(
+                  "consumables-stock",
+                  (consumables ?? []).map(c => ({
+                    Name: c.name,
+                    Unit: c.unit,
+                    "Quantity in Stock": c.quantityInStock,
+                    "Reorder Level": c.reorderLevel,
+                    "Low Stock": c.lowStock ? "Yes" : "No",
+                  }))
+                );
+              } else if (activeTab === "USAGE_LOG") {
+                exportToExcel(
+                  "consumables-usage-log",
+                  (usageLog ?? []).map(u => ({
+                    Consumable: u.consumableName,
+                    Unit: u.unit,
+                    "Quantity Used": u.quantityUsed,
+                    "Used By": u.usedBy ?? "",
+                    "Linked Surgery": u.surgeryName ?? u.procedureRef ?? u.labTestRef ?? "",
+                    "Used At": u.usedAt,
+                    Notes: u.notes ?? "",
+                  }))
+                );
+              } else if (activeTab === "IOL") {
+                exportToExcel(
+                  "iol-stock",
+                  (iols ?? []).map(i => ({
+                    Name: i.name,
+                    Type: i.type,
+                    Power: i.power,
+                    Manufacturer: i.manufacturer ?? "",
+                    "Quantity in Stock": i.quantityInStock,
+                    "Reorder Level": i.reorderLevel,
+                    "Low Stock": i.lowStock ? "Yes" : "No",
+                  }))
+                );
+              } else {
+                exportToExcel(
+                  "iol-usage-log",
+                  (iolUsageLog ?? []).map(u => ({
+                    IOL: u.iolName,
+                    Power: u.iolPower,
+                    "Quantity Used": u.quantityUsed,
+                    Surgery: u.surgeryName,
+                    "Used By": u.usedBy ?? "",
+                    "Used At": u.usedAt,
+                    Notes: u.notes ?? "",
+                  }))
+                );
+              }
+            }}
+          />
+          {activeTab === "STOCK" && <ConsumableModal />}
+          {activeTab === "USAGE_LOG" && <ConsumableUsageModal />}
+          {activeTab === "IOL" && <IolModal />}
+          {activeTab === "IOL_USAGE" && <IolUsageModal />}
+        </div>
       </div>
 
       {/* TABS */}

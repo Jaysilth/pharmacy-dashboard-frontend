@@ -14,6 +14,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Link } from "wouter";
 import { Plus, Search, Trash2 } from "lucide-react";
+import { ExportButton } from "@/components/export-button";
+import { exportToExcel } from "@/lib/export-excel";
 import { format } from "date-fns";
 import { useState } from "react";
 import type { Sale } from "@/types/api";
@@ -77,9 +79,32 @@ export default function Sales() {
           <h1 className="text-3xl font-bold tracking-tight text-foreground">Sales Management</h1>
           <p className="text-muted-foreground mt-1">Manage point of sale and view sales history.</p>
         </div>
-        <Button asChild>
-          <Link href="/sales/new"><Plus className="mr-2 h-4 w-4" /> New Sale</Link>
-        </Button>
+        <div className="flex items-center gap-2">
+          <ExportButton
+            testId="button-export-sales"
+            disabled={!filtered || filtered.length === 0}
+            onExport={() =>
+              exportToExcel(
+                "sales",
+                (filtered ?? []).map(s => ({
+                  "Sale #": s.saleNumber,
+                  Date: s.saleDate ?? s.createdAt.slice(0, 10),
+                  Customer: s.customerName ?? "",
+                  Items: s.items?.length
+                    ? s.items.map(i => `${i.itemName} x${i.quantity}`).join(", ")
+                    : s.medicine?.name
+                    ? `${s.medicine.name} x${s.quantity ?? 1}`
+                    : "",
+                  "Payment Method": s.paymentMethod ?? "",
+                  "Total (₦)": s.grandTotal ?? s.totalPrice ?? 0,
+                }))
+              )
+            }
+          />
+          <Button asChild>
+            <Link href="/sales/new"><Plus className="mr-2 h-4 w-4" /> New Sale</Link>
+          </Button>
+        </div>
       </div>
 
       <Card className="shadow-sm border-border">

@@ -10,6 +10,8 @@ import {
   TrendingUp, Calendar, Pill, Glasses, Package, Wrench,
   Stethoscope, FileText, FlaskConical,
 } from "lucide-react";
+import { ExportButton } from "@/components/export-button";
+import { exportToExcel } from "@/lib/export-excel";
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid,
   Tooltip, ResponsiveContainer,
@@ -253,8 +255,23 @@ function RevenueView() {
       {/* ── Breakdown table — exact figures per bucket, since bars/tooltips
            alone aren't precise enough for someone doing real bookkeeping ── */}
       <div className="bg-card rounded-2xl border border-border card-lift overflow-hidden">
-        <div className="px-6 py-4 border-b border-border">
+        <div className="px-6 py-4 border-b border-border flex items-center justify-between">
           <h2 className="text-sm font-semibold text-foreground">Breakdown</h2>
+          <ExportButton
+            testId="button-export-revenue"
+            disabled={!data || data.length === 0}
+            onExport={() =>
+              exportToExcel(
+                `revenue-${period}`,
+                (data ?? []).map(b => ({
+                  Period: b.label,
+                  "Start Date": b.periodStart,
+                  "End Date": b.periodEnd,
+                  "Revenue (₦)": b.totalRevenue,
+                }))
+              )
+            }
+          />
         </div>
         {isLoading ? (
           <div className="p-6 space-y-3">
@@ -339,12 +356,28 @@ function CategorySummaryView() {
 
       {/* ── Weekly breakdown table ── */}
       <div className="bg-card rounded-2xl border border-border card-lift overflow-hidden">
-        <div className="px-6 py-4 border-b border-border">
-          <h2 className="text-sm font-semibold text-foreground">Weekly Breakdown</h2>
-          <p className="text-xs text-muted-foreground mt-0.5">
-            Last {WEEKS} weeks (Sun–Sat). Counts are line items, not units — a surgery or
-            procedure always counts as 1 regardless of quantity.
-          </p>
+        <div className="px-6 py-4 border-b border-border flex items-start justify-between gap-4">
+          <div>
+            <h2 className="text-sm font-semibold text-foreground">Weekly Breakdown</h2>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Last {WEEKS} weeks (Sun–Sat). Counts are line items, not units — a surgery or
+              procedure always counts as 1 regardless of quantity.
+            </p>
+          </div>
+          <ExportButton
+            testId="button-export-category-summary"
+            disabled={!data || data.length === 0}
+            onExport={() =>
+              exportToExcel(
+                "category-summary",
+                (data ?? []).map(week => {
+                  const row: Record<string, unknown> = { Week: week.label, "Start Date": week.periodStart, "End Date": week.periodEnd };
+                  rankedCategories.forEach(cat => { row[CATEGORY_META[cat].label] = week.counts[cat] ?? 0; });
+                  return row;
+                })
+              )
+            }
+          />
         </div>
 
         {isLoading ? (
@@ -413,11 +446,31 @@ function TopItemsView() {
 
   return (
     <div className="space-y-6">
-      <p className="text-xs text-muted-foreground -mt-2">
-        All-time, ranked by total quantity (units sold, or times performed for services).
-        This is plain counting — no AI summarization on top of it, so what you see here is
-        exactly what's in the sales data.
-      </p>
+      <div className="flex items-start justify-between gap-4 -mt-2">
+        <p className="text-xs text-muted-foreground">
+          All-time, ranked by total quantity (units sold, or times performed for services).
+          This is plain counting — no AI summarization on top of it, so what you see here is
+          exactly what's in the sales data.
+        </p>
+        <ExportButton
+          testId="button-export-top-items"
+          disabled={!data || data.length === 0}
+          onExport={() =>
+            exportToExcel(
+              "top-items",
+              categoriesWithData.map(cat => ({
+                sheetName: CATEGORY_META[cat].label,
+                rows: (byCategory[cat] ?? []).map((item, i) => ({
+                  Rank: i + 1,
+                  Name: item.itemName,
+                  "Total Quantity": item.totalQuantity,
+                  "Total Revenue (₦)": item.totalRevenue,
+                })),
+              }))
+            )
+          }
+        />
+      </div>
 
       {isLoading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">

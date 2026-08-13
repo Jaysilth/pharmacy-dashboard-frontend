@@ -23,6 +23,8 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
 import { Plus, Edit, Trash2, Search, ChevronLeft, ChevronRight } from "lucide-react"; // ← CHANGED: added ChevronLeft, ChevronRight
+import { ExportButton } from "@/components/export-button";
+import { exportToExcel } from "@/lib/export-excel";
 import { cn } from "@/lib/utils";
 
 type GlassesTab = "FRAMES" | "ACCESSORIES" | "REPAIRS";
@@ -320,9 +322,52 @@ export default function GlassesPage() {
           <h1 className="text-3xl font-bold tracking-tight text-foreground">Glasses & Eyewear</h1>
           <p className="text-muted-foreground mt-1">Manage frames, accessories, and glasses fixing services.</p>
         </div>
-        {activeTab === "FRAMES"      && <GlassesFormModal />}
-        {activeTab === "ACCESSORIES" && <AccessoryModal />}
-        {activeTab === "REPAIRS"     && <RepairModal />}
+        <div className="flex items-center gap-2">
+          <ExportButton
+            testId="button-export-glasses"
+            onExport={() => {
+              if (activeTab === "FRAMES") {
+                exportToExcel(
+                  "glasses-frames",
+                  (glasses ?? []).map(g => ({
+                    Name: g.name,
+                    Brand: g.brand ?? "",
+                    "Frame Type": g.frameType ?? "",
+                    "Lens Type": g.lensType ?? "",
+                    Color: g.color ?? "",
+                    Quantity: g.quantity,
+                    "Price (₦)": g.price,
+                    "Low Stock": g.lowStock ? "Yes" : "No",
+                  }))
+                );
+              } else if (activeTab === "ACCESSORIES") {
+                exportToExcel(
+                  "glasses-accessories",
+                  (accessories ?? []).map(a => ({
+                    Name: a.name,
+                    Type: a.accessoryType,
+                    Quantity: a.quantity,
+                    "Price (₦)": a.price,
+                    "Low Stock": a.lowStock ? "Yes" : "No",
+                  }))
+                );
+              } else {
+                exportToExcel(
+                  "glasses-repairs",
+                  (repairs ?? []).map(r => ({
+                    Name: r.name,
+                    Description: r.description ?? "",
+                    "Price (₦)": r.price,
+                    Active: r.active ? "Yes" : "No",
+                  }))
+                );
+              }
+            }}
+          />
+          {activeTab === "FRAMES"      && <GlassesFormModal />}
+          {activeTab === "ACCESSORIES" && <AccessoryModal />}
+          {activeTab === "REPAIRS"     && <RepairModal />}
+        </div>
       </div>
 
       <Card className="shadow-sm border-border">

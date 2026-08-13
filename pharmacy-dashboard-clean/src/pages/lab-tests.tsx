@@ -16,6 +16,8 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
 import { Plus, Edit, Trash2, ChevronDown, ChevronRight, Package } from "lucide-react";
+import { ExportButton } from "@/components/export-button";
+import { exportToExcel } from "@/lib/export-excel";
 import { ConsumableUsageWidget } from "@/components/ConsumableUsageWidget";
 
 const LAB_CATEGORIES = [
@@ -109,7 +111,24 @@ export default function LabTestsPage() {
           <h1 className="text-3xl font-bold tracking-tight text-foreground">Laboratory Tests</h1>
           <p className="text-muted-foreground mt-1">Manage ocular screening tests and fees. Stored locally — works offline.</p>
         </div>
-        <LabModal />
+        <div className="flex items-center gap-2">
+          <ExportButton
+            testId="button-export-lab-tests"
+            disabled={labTests.length === 0}
+            onExport={() =>
+              exportToExcel(
+                "lab-tests",
+                labTests.map(l => ({
+                  Name: l.name,
+                  Category: catInfo(l.category).label,
+                  "Price (₦)": l.price,
+                  Description: l.description ?? "",
+                }))
+              )
+            }
+          />
+          <LabModal />
+        </div>
       </div>
       <Card className="shadow-sm">
         <CardContent className="p-0">

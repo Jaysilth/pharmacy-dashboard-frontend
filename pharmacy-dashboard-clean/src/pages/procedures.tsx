@@ -16,6 +16,8 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
 import { Plus, Edit, Trash2, ChevronDown, ChevronRight, Package } from "lucide-react";
+import { ExportButton } from "@/components/export-button";
+import { exportToExcel } from "@/lib/export-excel";
 import { ConsumableUsageWidget } from "@/components/ConsumableUsageWidget";
 
 const PROC_CATEGORIES = [
@@ -114,7 +116,24 @@ export default function ProceduresPage() {
           <h1 className="text-3xl font-bold tracking-tight text-foreground">Ophthalmic Procedures</h1>
           <p className="text-muted-foreground mt-1">Manage diagnostic procedures and fees. Stored locally — works offline.</p>
         </div>
-        <ProcedureModal />
+        <div className="flex items-center gap-2">
+          <ExportButton
+            testId="button-export-procedures"
+            disabled={procedures.length === 0}
+            onExport={() =>
+              exportToExcel(
+                "procedures",
+                procedures.map(p => ({
+                  Name: p.name,
+                  Category: catInfo(p.category).label,
+                  "Price (₦)": p.price,
+                  Description: p.description ?? "",
+                }))
+              )
+            }
+          />
+          <ProcedureModal />
+        </div>
       </div>
       <Card className="shadow-sm">
         <CardContent className="p-0">

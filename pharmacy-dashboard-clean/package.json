@@ -24,6 +24,7 @@
     "date-fns": "^4.4.0",
     "lucide-react": "^1.18.0",
     "motion": "^12.42.2",
+    "@e965/xlsx": "^0.20.3",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
     "react-hook-form": "^7.79.0",

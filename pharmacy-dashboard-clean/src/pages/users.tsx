@@ -25,6 +25,8 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Plus, Edit, Trash2, UserCheck, UserX, ShieldCheck, Shield } from "lucide-react";
+import { ExportButton } from "@/components/export-button";
+import { exportToExcel } from "@/lib/export-excel";
 import { format } from "date-fns";
 
 // ── Schema ────────────────────────────────────────────────────────────────────
@@ -334,7 +336,26 @@ export default function UsersPage() {
           <h1 className="text-3xl font-bold tracking-tight text-foreground">User Management</h1>
           <p className="text-muted-foreground mt-1">Manage system accounts and permissions.</p>
         </div>
-        <CreateUserModal />
+        <div className="flex items-center gap-2">
+          <ExportButton
+            testId="button-export-users"
+            disabled={!users || users.length === 0}
+            onExport={() =>
+              exportToExcel(
+                "users",
+                (users ?? []).map(u => ({
+                  Username: u.username,
+                  Email: u.email,
+                  Roles: u.roles.join(", "),
+                  Enabled: u.enabled ? "Yes" : "No",
+                  Locked: u.accountNonLocked ? "No" : "Yes",
+                  "Created": u.createdAt.slice(0, 10),
+                }))
+              )
+            }
+          />
+          <CreateUserModal />
+        </div>
       </div>
 
       <Card className="shadow-sm border-border">
