@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, Fragment } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -18,7 +18,7 @@ import {
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { ApiError } from "@/lib/api-client";
-import type { Consumable, ConsumableInput } from "@/types/api";
+import type { Consumable, ConsumableInput, ConsumableUsageRecord } from "@/types/api";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import {
   Table, TableBody, TableCell, TableHead,
@@ -40,7 +40,7 @@ import {
   Form, FormControl, FormField, FormItem, FormLabel, FormMessage,
 } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Edit, Trash2, Search, Package, History, Syringe } from "lucide-react";
+import { Plus, Edit, Trash2, Search, Package, History, Syringe, ChevronDown, ChevronRight } from "lucide-react";
 import { ExportButton } from "@/components/export-button";
 import { exportToExcel } from "@/lib/export-excel";
 import { format } from "date-fns";
@@ -50,6 +50,12 @@ import { IolUsageModal } from "@/components/IolUsageModal";
 import { ConsumableUsageModal } from "@/components/ConsumableUsageModal";
 
 type PageTab = "STOCK" | "USAGE_LOG" | "IOL" | "IOL_USAGE";
+
+const IOL_TYPES = [
+  { value: "",         label: "All" },
+  { value: "RIGID",    label: "Rigid" },
+  { value: "FOLDABLE", label: "Foldable" },
+];
 
 const schema = z.object({
   name:            z.string().min(1, "Name is required"),
@@ -182,6 +188,8 @@ function ConsumableModal({
 export default function ConsumablesPage() {
   const [activeTab, setActiveTab] = useState<PageTab>("STOCK");
   const [search, setSearch] = useState("");
+  const [activeIolType, setActiveIolType] = useState("");
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const { toast } = useToast();
   const { isSuperAdmin } = useAuth();
 
@@ -202,6 +210,51 @@ export default function ConsumablesPage() {
   const deleteUsage = useDeleteConsumableUsage();
   const deleteIol = useDeleteIol();
   const deleteIolUsage = useDeleteIolUsage();
+
+  const filteredIols = iols?.filter(i =>
+    !activeIolType || i.type === activeIolType
+  ) ?? [];
+
+  // Usage log entries carry no shared "session" id, so items recorded together
+  // in one ConsumableUsageModal submission are grouped here by the closest
+  // proxy available: same person + same linked target + same calendar day.
+  // This keeps the table to one row per encounter instead of one row per
+  // consumable, without needing a backend change.
+  type UsageGroup = {
+    key: string;
+    usedBy: string;
+    linkedLabel: string;
+    date: string;
+    items: ConsumableUsageRecord[];
+  };
+
+  const usageGroups: UsageGroup[] = (() => {
+    if (!usageLog) return [];
+    const map = new Map<string, UsageGroup>();
+    for (const u of usageLog) {
+      const dateKey = format(new Date(u.usedAt), "yyyy-MM-dd");
+      const linkedLabel = u.surgeryName || u.procedureRef || u.labTestRef || "—";
+      const usedByLabel = u.usedBy || "Unspecified";
+      const key = `${usedByLabel}__${linkedLabel}__${dateKey}`;
+      const existing = map.get(key);
+      if (existing) {
+        existing.items.push(u);
+      } else {
+        map.set(key, { key, usedBy: usedByLabel, linkedLabel, date: u.usedAt, items: [u] });
+      }
+    }
+    return Array.from(map.values()).sort(
+      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+    );
+  })();
+
+  const toggleGroup = (key: string) => {
+    setExpandedGroups(prev => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key); else next.add(key);
+      return next;
+    });
+  };
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto px-4">
@@ -246,7 +299,7 @@ export default function ConsumablesPage() {
               } else if (activeTab === "IOL") {
                 exportToExcel(
                   "iol-stock",
-                  (iols ?? []).map(i => ({
+                  (filteredIols ?? []).map(i => ({
                     Name: i.name,
                     Type: i.type,
                     Power: i.power,
@@ -307,7 +360,7 @@ export default function ConsumablesPage() {
 
         {/* SEARCH */}
         {(activeTab === "STOCK" || activeTab === "IOL") && (
-          <CardHeader className="py-3 px-4 border-b bg-muted/30">
+          <CardHeader className="py-3 px-4 border-b bg-muted/30 space-y-3">
             <div className="flex items-center justify-between">
               <div className="relative w-full max-w-sm">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -319,6 +372,30 @@ export default function ConsumablesPage() {
                 />
               </div>
             </div>
+
+            {activeTab === "IOL" && (
+              <div className="flex gap-1.5 flex-wrap">
+                {IOL_TYPES.map(t => (
+                  <button
+                    key={t.value}
+                    onClick={() => setActiveIolType(t.value)}
+                    className={cn(
+                      "px-3 py-1.5 rounded-md text-xs font-medium transition-colors border",
+                      activeIolType === t.value
+                        ? "bg-primary text-primary-foreground border-primary"
+                        : "bg-background border-border text-muted-foreground hover:bg-muted/50"
+                    )}
+                  >
+                    {t.label}
+                    {t.value !== "" && iols && (
+                      <span className="ml-1.5 opacity-60">
+                        ({iols.filter(i => i.type === t.value).length})
+                      </span>
+                    )}
+                  </button>
+                ))}
+              </div>
+            )}
           </CardHeader>
         )}
 
@@ -484,15 +561,17 @@ export default function ConsumablesPage() {
             )}
 
             {/* ================= USAGE LOG TAB ================= */}
+            {/* Grouped by person + linked target + day, since usage entries recorded
+                together in one modal submission share no batch/session id from the
+                backend. Click a row (or "View") to expand the individual items. */}
             {activeTab === "USAGE_LOG" && (
               <>
                 <TableHeader className="bg-muted/40">
                   <TableRow>
-                    <TableHead className="pl-6">Consumable</TableHead>
-                    <TableHead className="text-right">Qty Used</TableHead>
-                    <TableHead>Used By</TableHead>
+                    <TableHead className="pl-6">Used By</TableHead>
                     <TableHead>Linked To</TableHead>
-                    <TableHead>Notes</TableHead>
+                    <TableHead className="text-right">Items</TableHead>
+                    <TableHead className="text-right">Total Qty</TableHead>
                     <TableHead>Date</TableHead>
                     <TableHead className="text-right pr-6">Actions</TableHead>
                   </TableRow>
@@ -502,62 +581,111 @@ export default function ConsumablesPage() {
                   {loadingLog ? (
                     Array.from({ length: 5 }).map((_, i) => (
                       <TableRow key={i} className="h-14">
-                        {Array.from({ length: 7 }).map((__, j) => (
+                        {Array.from({ length: 6 }).map((__, j) => (
                           <TableCell key={j}>
                             <Skeleton className="h-5 w-full" />
                           </TableCell>
                         ))}
                       </TableRow>
                     ))
-                  ) : usageLog && usageLog.length > 0 ? (
-                    usageLog.map((u) => (
-                      <TableRow
-                        key={u.id}
-                        className="hover:bg-muted/10 h-14 [&>td]:align-middle"
-                      >
-                        <TableCell className="pl-6 font-medium">
-                          {u.consumableName}
-                        </TableCell>
+                  ) : usageGroups.length > 0 ? (
+                    usageGroups.map((g) => {
+                      const isExpanded = expandedGroups.has(g.key);
+                      const totalQty = g.items.reduce((sum, it) => sum + it.quantityUsed, 0);
+                      return (
+                        <Fragment key={g.key}>
+                          <TableRow className="hover:bg-muted/10 h-14 [&>td]:align-middle">
+                            <TableCell className="pl-6">
+                              <button
+                                onClick={() => toggleGroup(g.key)}
+                                className="flex items-center gap-2 font-medium hover:text-primary transition-colors"
+                              >
+                                {isExpanded
+                                  ? <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
+                                  : <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />}
+                                {g.usedBy}
+                              </button>
+                            </TableCell>
 
-                        <TableCell className="text-right font-mono tabular-nums font-semibold">
-                          {u.quantityUsed}
-                        </TableCell>
+                            <TableCell className="text-muted-foreground">
+                              {g.linkedLabel}
+                            </TableCell>
 
-                        <TableCell className="text-muted-foreground">
-                          {u.usedBy || "—"}
-                        </TableCell>
+                            <TableCell className="text-right">
+                              <Badge variant="outline">
+                                {g.items.length} item{g.items.length !== 1 ? "s" : ""}
+                              </Badge>
+                            </TableCell>
 
-                        <TableCell className="text-muted-foreground">
-                          {u.linkedEntityType || "—"}
-                        </TableCell>
+                            <TableCell className="text-right font-mono tabular-nums font-semibold">
+                              {totalQty}
+                            </TableCell>
 
-                        <TableCell className="text-muted-foreground text-sm truncate max-w-[140px]">
-                          {u.notes || "—"}
-                        </TableCell>
+                            <TableCell className="text-muted-foreground text-sm">
+                              {format(new Date(g.date), "dd MMM yyyy")}
+                            </TableCell>
 
-                        <TableCell className="text-muted-foreground text-sm">
-                          {format(new Date(u.usedAt), "dd MMM yyyy")}
-                        </TableCell>
+                            <TableCell className="text-right pr-6">
+                              <Button variant="ghost" size="sm" onClick={() => toggleGroup(g.key)}>
+                                {isExpanded ? "Hide" : "View"}
+                              </Button>
+                            </TableCell>
+                          </TableRow>
 
-                        <TableCell className="text-right pr-6">
-                          {isSuperAdmin ? (
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="text-destructive"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          ) : (
-                            "—"
+                          {isExpanded && (
+                            <TableRow className="bg-muted/10 hover:bg-muted/10">
+                              <TableCell colSpan={6} className="py-3 px-6">
+                                <div className="space-y-1.5">
+                                  {g.items.map((u) => (
+                                    <div
+                                      key={u.id}
+                                      className="flex items-center justify-between gap-3 py-2 px-3 rounded-lg bg-background border border-border/60"
+                                    >
+                                      <div className="flex items-center gap-3 min-w-0">
+                                        <span className="text-sm font-medium truncate">{u.consumableName}</span>
+                                        <span className="text-xs text-muted-foreground font-mono shrink-0">
+                                          {u.quantityUsed} {u.unit}
+                                        </span>
+                                      </div>
+                                      <div className="flex items-center gap-3 shrink-0">
+                                        {u.notes && (
+                                          <span className="text-xs text-muted-foreground truncate max-w-[200px]">
+                                            {u.notes}
+                                          </span>
+                                        )}
+                                        {isSuperAdmin && (
+                                          <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-7 w-7 text-destructive hover:bg-destructive/10"
+                                            onClick={() =>
+                                              deleteUsage.mutate(u.id, {
+                                                onSuccess: () => toast({ title: "Usage entry deleted." }),
+                                                onError: (e) => toast({
+                                                  title: "Delete failed",
+                                                  description: e instanceof ApiError ? e.message : String(e),
+                                                  variant: "destructive",
+                                                }),
+                                              })
+                                            }
+                                          >
+                                            <Trash2 className="h-3.5 w-3.5" />
+                                          </Button>
+                                        )}
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              </TableCell>
+                            </TableRow>
                           )}
-                        </TableCell>
-                      </TableRow>
-                    ))
+                        </Fragment>
+                      );
+                    })
                   ) : (
                     <TableRow>
                       <TableCell
-                        colSpan={7}
+                        colSpan={6}
                         className="h-32 text-center text-muted-foreground"
                       >
                         No usage recorded yet.
@@ -595,8 +723,8 @@ export default function ConsumablesPage() {
                         ))}
                       </TableRow>
                     ))
-                  ) : iols && iols.length > 0 ? (
-                    iols.map((i) => (
+                  ) : filteredIols.length > 0 ? (
+                    filteredIols.map((i) => (
                       <TableRow
                         key={i.id}
                         className="hover:bg-muted/10 h-14 [&>td]:align-middle"
@@ -691,7 +819,11 @@ export default function ConsumablesPage() {
                   ) : (
                     <TableRow>
                       <TableCell colSpan={8} className="h-32 text-center text-muted-foreground">
-                        {search ? `No IOLs matching "${search}".` : "No IOLs in stock yet."}
+                        {search
+                          ? `No IOLs matching "${search}".`
+                          : activeIolType
+                          ? `No ${IOL_TYPES.find(t => t.value === activeIolType)?.label} IOLs in stock.`
+                          : "No IOLs in stock yet."}
                       </TableCell>
                     </TableRow>
                   )}
