@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useGetConsumables, useGetSurgeries, useRecordConsumableUsage } from "@/lib/queries";
 import { useClinical } from "@/context/ClinicalContext";
 import { useToast } from "@/hooks/use-toast";
@@ -48,6 +48,7 @@ export function ConsumableUsageModal({ trigger }: { trigger?: React.ReactNode })
   const [lines, setLines] = useState<UsageLine[]>([]);
   const [search, setSearch] = useState("");
   const [showPicker, setShowPicker] = useState(false);
+  const selectedLinesRef = useRef<HTMLDivElement>(null);
 
   const filtered = consumables?.filter(
     c =>
@@ -83,6 +84,19 @@ export function ConsumableUsageModal({ trigger }: { trigger?: React.ReactNode })
   };
 
   const removeLine = (idx: number) => setLines(prev => prev.filter((_, i) => i !== idx));
+
+  // Keep the latest selected consumable visible without allowing the growing
+  // list to push the rest of the modal outside the viewport.
+  useEffect(() => {
+    if (lines.length === 0) return;
+    const container = selectedLinesRef.current;
+    if (!container) return;
+
+    container.scrollTo({
+      top: container.scrollHeight,
+      behavior: "smooth",
+    });
+  }, [lines.length]);
 
   const targetChosen =
     usedForType === "SURGERY"   ? !!surgeryId :
@@ -150,12 +164,13 @@ export function ConsumableUsageModal({ trigger }: { trigger?: React.ReactNode })
           </Button>
         )}
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[480px]">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-[480px] max-h-[calc(100vh-2rem)] overflow-hidden flex flex-col p-6">
+        <DialogHeader className="shrink-0">
           <DialogTitle>Record Consumable Usage</DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4 pt-2">
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain pr-1 pt-2">
+          <div className="space-y-4">
 
           {/* ── What it was used for ── */}
           <div className="grid grid-cols-2 gap-4">
@@ -216,7 +231,10 @@ export function ConsumableUsageModal({ trigger }: { trigger?: React.ReactNode })
             <Label>Consumables</Label>
 
             {lines.length > 0 && (
-              <div className="space-y-2">
+              <div
+                ref={selectedLinesRef}
+                className="max-h-[220px] overflow-y-auto overscroll-contain space-y-2 pr-1 rounded-lg"
+              >
                 {lines.map((line, idx) => (
                   <div
                     key={line.consumableId}
@@ -296,13 +314,14 @@ export function ConsumableUsageModal({ trigger }: { trigger?: React.ReactNode })
             <Textarea className="resize-none" value={notes} onChange={e => setNotes(e.target.value)} />
           </div>
 
-          <div className="flex justify-end gap-2 pt-2">
-            <Button type="button" variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
-            <Button type="button" disabled={!canSubmit} onClick={handleSubmit}>
-              {recordUsage.isPending
-                ? "Recording…"
-                : `Record ${lines.length || ""} Consumable${lines.length !== 1 ? "s" : ""}`}
-            </Button>
+            <div className="flex justify-end gap-2 pt-2 pb-1">
+              <Button type="button" variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
+              <Button type="button" disabled={!canSubmit} onClick={handleSubmit}>
+                {recordUsage.isPending
+                  ? "Recording…"
+                  : `Record ${lines.length || ""} Consumable${lines.length !== 1 ? "s" : ""}`}
+              </Button>
+            </div>
           </div>
         </div>
       </DialogContent>
