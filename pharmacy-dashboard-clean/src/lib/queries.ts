@@ -216,14 +216,6 @@ export function useGetSale(id: number, options?: Omit<UseQueryOptions<Sale>, "qu
   });
 }
 
-export function useDeleteSale() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (id: number) => apiRequest<void>(`/api/sales/${id}`, { method: "DELETE" }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: QK.sales() }),
-  });
-}
-
 // ── Glasses Accessories ──────────────────────────────────────────────────────
 
 export function useGetGlassesAccessories(params?: { search?: string }, options?: Omit<UseQueryOptions<GlassesAccessory[]>, "queryKey" | "queryFn">) {

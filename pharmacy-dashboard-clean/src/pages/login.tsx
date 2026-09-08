@@ -98,10 +98,8 @@ export default function Login() {
           }}
         />
 
-      
-
         {/* ── TOP: Secure Gateway badge ── */}
-        <div className="relative z-10 flex items-center gap-2">
+        <div className="relative z-10 flex items-center gap-2 flex-none">
           <span
             className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-slate-200 border border-white/10 rounded-full px-3.5 py-1.5 shadow-sm"
             style={{ background: "rgba(255,255,255,0.05)", backdropFilter: "blur(12px)" }}
@@ -112,12 +110,15 @@ export default function Login() {
           </span>
         </div>
 
-        {/* ── CENTER: Floating portrait card ── */}
-        <div className="pointer-events-none absolute inset-0 flex items-center justify-center p-8 select-none">
+        {/* ── MIDDLE: Portrait — in normal flow now, not absolutely positioned
+             over the whole panel. flex-1 + min-h-0 lets it shrink on short
+             viewports instead of drifting down into the brand block below. ── */}
+        <div className="relative z-10 flex-1 min-h-0 flex items-center justify-center py-8 select-none">
           <div
-            className="pointer-events-auto relative w-full overflow-hidden"
+            className="relative w-full overflow-hidden"
             style={{
               maxWidth: 320,
+              maxHeight: "100%",
               aspectRatio: "4 / 5",
               background: "linear-gradient(to bottom, #b3cee5, #8eb0cc)",
               borderRadius: "2.5rem",
@@ -156,8 +157,10 @@ export default function Login() {
           </div>
         </div>
 
-        {/* ── BOTTOM: Brand identity ── */}
-        <div className="relative z-10 mt-auto space-y-6 max-w-sm">
+        {/* ── BOTTOM: Brand identity — sits below the image in flow, never
+             underneath it. "What's New" gets its own solid card so the text
+             has real contrast instead of pale text over a busy background. ── */}
+        <div className="relative z-10 flex-none space-y-5 max-w-sm">
           {/* Brand name row */}
           <div>
             <div className="flex items-center gap-2">
@@ -181,19 +184,22 @@ export default function Login() {
             />
           </div>
 
-          {/* System bulletin — was just a static "SYSTEM PORTAL v3.0" tag.
-              Reusing the same space to actually say something useful. */}
+          {/* System bulletin — solid dark card behind it now, so the text
+              reads clearly regardless of what's happening behind the panel. */}
           <div
-            className="pl-7"
-            style={{ borderTop: "1px solid rgba(255,255,255,0.1)", paddingTop: 16 }}
+            className="rounded-xl px-4 py-3.5"
+            style={{
+              background: "rgba(2,6,23,0.55)",
+              border: "1px solid rgba(255,255,255,0.1)",
+            }}
           >
             <p
               className="text-[10px] font-bold uppercase tracking-widest mb-1.5"
-              style={{ color: "#8eb0cc" }}
+              style={{ color: "#5DCAA5" }}
             >
               What's New
             </p>
-            <p className="text-xs leading-relaxed" style={{ color: "#cbd5e1" }}>
+            <p className="text-xs leading-relaxed" style={{ color: "#f1f5f9" }}>
               Enhanced inventory tracking, faster patient search, and automated low-stock alerts.
             </p>
           </div>

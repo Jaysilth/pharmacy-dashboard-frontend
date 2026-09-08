@@ -1,22 +1,14 @@
 import { useRoute, useLocation } from "wouter";
-import { useGetSale, useDeleteSale } from "@/lib/queries";
-import { useAuth } from "@/context/AuthContext";
-import { useToast } from "@/hooks/use-toast";
-import { ApiError } from "@/lib/api-client";
+import { useGetSale } from "@/lib/queries";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
-  AlertDialog, AlertDialogAction, AlertDialogCancel,
-  AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
-  AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
-import {
   Table, TableBody, TableCell, TableHead,
   TableHeader, TableRow,
 } from "@/components/ui/table";
-import { ArrowLeft, Trash2, User, CreditCard, FileText, Calendar, Tag } from "lucide-react";
+import { ArrowLeft, User, CreditCard, FileText, Calendar, Tag } from "lucide-react";
 import { format } from "date-fns";
 import type { Sale } from "@/types/api";
 
@@ -58,25 +50,9 @@ function resolveItems(sale: Sale) {
 export default function SaleDetail() {
   const [, params] = useRoute("/sales/:id");
   const [, setLocation] = useLocation();
-  const { isSuperAdmin } = useAuth();
-  const { toast } = useToast();
 
   const id = params?.id ? parseInt(params.id) : 0;
   const { data: sale, isLoading } = useGetSale(id);
-  const deleteSale = useDeleteSale();
-
-  const handleDelete = () => {
-    deleteSale.mutate(id, {
-      onSuccess: () => {
-        toast({ title: "Sale deleted." });
-        setLocation("/sales");
-      },
-      onError: (err) => {
-        const msg = err instanceof ApiError ? err.message : "Delete failed.";
-        toast({ title: "Error", description: msg, variant: "destructive" });
-      },
-    });
-  };
 
   if (isLoading) {
     return (
@@ -119,35 +95,6 @@ export default function SaleDetail() {
             </p>
           </div>
         </div>
-
-        {/* Delete — SUPER_ADMIN only */}
-        {isSuperAdmin && (
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button variant="destructive" size="sm">
-                <Trash2 className="h-4 w-4 mr-2" /> Delete Sale
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Delete {sale.saleNumber ?? `SAL-${sale.id}`}?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  This permanently removes the sale record. Stock levels will NOT be
-                  automatically restored. This cannot be undone.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction
-                  onClick={handleDelete}
-                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                >
-                  Delete
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-        )}
       </div>
 
       {/* ── Customer + Payment info ── */}

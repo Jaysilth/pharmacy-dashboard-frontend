@@ -1,19 +1,11 @@
-import { useGetSales, useDeleteSale } from "@/lib/queries";
-import { useAuth } from "@/context/AuthContext";
-import { useToast } from "@/hooks/use-toast";
-import { ApiError } from "@/lib/api-client";
+import { useGetSales } from "@/lib/queries";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
-import {
-  AlertDialog, AlertDialogAction, AlertDialogCancel,
-  AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
-  AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
 import { Link } from "wouter";
-import { Plus, Search, Trash2 } from "lucide-react";
+import { Plus, Search } from "lucide-react";
 import { ExportButton } from "@/components/export-button";
 import { exportToExcel } from "@/lib/export-excel";
 import { format } from "date-fns";
@@ -39,10 +31,7 @@ function itemCount(sale: Sale): number {
 }
 
 export default function Sales() {
-  const { isSuperAdmin } = useAuth();
-  const { toast } = useToast();
   const { data: sales, isLoading } = useGetSales();
-  const deleteSale = useDeleteSale();
   const [search, setSearch] = useState("");
 
   const filtered = sales?.filter(s => {
@@ -53,24 +42,11 @@ export default function Sales() {
       s.customerPhone?.toLowerCase().includes(q);
   }) ?? [];
 
-  const handleDelete = (sale: Sale) => {
-    deleteSale.mutate(sale.id, {
-      onSuccess: () => toast({ title: `Sale ${sale.saleNumber ?? sale.id} deleted.` }),
-      onError: (err) => {
-        const msg = err instanceof ApiError ? err.message : "Delete failed.";
-        toast({ title: "Error", description: msg, variant: "destructive" });
-      },
-    });
-  };
+  const headerClass =
+    "hidden md:grid md:grid-cols-[1.4fr_1fr_1.2fr_0.6fr_0.7fr_0.7fr] gap-4 px-6 py-3 bg-muted/30 text-xs font-medium text-muted-foreground uppercase tracking-wide border-b border-border";
 
-  // Column layout depends on whether SUPER_ADMIN (extra delete column)
-  const headerClass = isSuperAdmin
-    ? "hidden md:grid md:grid-cols-[1.4fr_1fr_1.2fr_0.6fr_0.7fr_0.7fr_auto] gap-4 px-6 py-3 bg-muted/30 text-xs font-medium text-muted-foreground uppercase tracking-wide border-b border-border"
-    : "hidden md:grid md:grid-cols-[1.4fr_1fr_1.2fr_0.6fr_0.7fr_0.7fr] gap-4 px-6 py-3 bg-muted/30 text-xs font-medium text-muted-foreground uppercase tracking-wide border-b border-border";
-
-  const rowClass = isSuperAdmin
-    ? "grid grid-cols-1 md:grid-cols-[1.4fr_1fr_1.2fr_0.6fr_0.7fr_0.7fr_auto] gap-2 md:gap-4 px-6 py-4 border-b border-border last:border-0 hover:bg-muted/10 transition-colors items-center"
-    : "grid grid-cols-1 md:grid-cols-[1.4fr_1fr_1.2fr_0.6fr_0.7fr_0.7fr] gap-2 md:gap-4 px-6 py-4 border-b border-border last:border-0 hover:bg-muted/10 transition-colors items-center";
+  const rowClass =
+    "grid grid-cols-1 md:grid-cols-[1.4fr_1fr_1.2fr_0.6fr_0.7fr_0.7fr] gap-2 md:gap-4 px-6 py-4 border-b border-border last:border-0 hover:bg-muted/10 transition-colors items-center";
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
@@ -126,7 +102,6 @@ export default function Sales() {
             <span>Items</span>
             <span>Payment</span>
             <span className="text-right">Total</span>
-            {isSuperAdmin && <span />}
           </div>
 
           {isLoading ? (
@@ -190,39 +165,6 @@ export default function Sales() {
                 <div className="text-right font-mono font-semibold text-sm text-foreground">
                   ₦{saleTotal(sale).toFixed(2)}
                 </div>
-
-                {/* Delete — SUPER_ADMIN only */}
-                {isSuperAdmin && (
-                  <div className="flex justify-end">
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button variant="ghost" size="icon"
-                          className="text-destructive hover:text-destructive hover:bg-destructive/10 h-8 w-8">
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>
-                            Delete {sale.saleNumber ?? `SAL-${sale.id}`}?
-                          </AlertDialogTitle>
-                          <AlertDialogDescription>
-                            This permanently removes the sale record. Stock levels will NOT
-                            be automatically restored. This cannot be undone.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancel</AlertDialogCancel>
-                          <AlertDialogAction
-                            onClick={() => handleDelete(sale)}
-                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                            Delete
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  </div>
-                )}
               </div>
             ))
           )}
