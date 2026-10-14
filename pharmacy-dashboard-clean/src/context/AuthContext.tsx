@@ -167,11 +167,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (requestId === profileRequestIdRef.current) {
         setCurrentUser(profile);
       }
-    } catch (err) {
+        } catch (err) {
       if (
         requestId === profileRequestIdRef.current &&
         err instanceof ApiError &&
-        err.status === 401
+        (err.status === 401 || err.status === 403)
       ) {
         logout();
       }
